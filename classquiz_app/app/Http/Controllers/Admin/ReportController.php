@@ -10,23 +10,88 @@ use App\Models\QuizSession;
 use App\Services\GradingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
 {
     public function __construct(private GradingService $grading) {}
 
-    public function index(Quiz $quiz, QuizAssignment $assignment)
+    public function index(Request $request, Quiz $quiz, QuizAssignment $assignment)
     {
         Gate::authorize('view', $assignment);
         $this->ensureAssignmentBelongsToQuiz($quiz, $assignment);
 
-        $effectiveMaxScore = (float) $assignment->quiz->questions()->where('is_enabled', true)->sum('points');
+        $assignment->load(['quiz.questions' => fn ($query) => $query->where('is_enabled', true)]);
+
+        $effectiveMaxScore = (float) $assignment->quiz->questions->sum('points');
+        $totalQuestions = $assignment->quiz->questions->count();
+        $sort = in_array($request->string('sort')->toString(), ['last_active', 'questions', 'score', 'time', 'submitted'], true)
+            ? $request->string('sort')->toString()
+            : 'last_active';
+        $direction = in_array($request->string('direction')->toString(), ['asc', 'desc'], true)
+            ? $request->string('direction')->toString()
+            : 'desc';
 
         $sessions = $assignment->sessions()
             ->with('answers')
-            ->orderByDesc('submitted_at')
-            ->paginate(30);
+            ->withCount('answers')
+            ->get()
+            ->map(function (QuizSession $session) use ($effectiveMaxScore, $totalQuestions) {
+                $answeredCount = min($session->answers_count, $totalQuestions);
+                $questionProgress = $totalQuestions > 0
+                    ? (int) round(($answeredCount / $totalQuestions) * 100)
+                    : 0;
+                $lastActivityTimestamp = $session->last_activity_at?->timestamp
+                    ?? $session->submitted_at?->timestamp
+                    ?? $session->started_at?->timestamp
+                    ?? $session->updated_at?->timestamp
+                    ?? $session->created_at?->timestamp
+                    ?? 0;
+                $submittedTimestamp = $session->submitted_at?->timestamp ?? 0;
+
+                $timeSeconds = null;
+                if ($session->started_at) {
+                    $endedAt = $session->submitted_at
+                        ?? $session->last_activity_at
+                        ?? $session->updated_at
+                        ?? now();
+
+                    $timeSeconds = max(0, $session->started_at->diffInSeconds($endedAt));
+                }
+
+                $score = $session->score !== null ? (float) $session->score : 0.0;
+                $scoreSort = $effectiveMaxScore > 0
+                    ? (int) round(($score / $effectiveMaxScore) * 10000)
+                    : 0;
+
+                $session->setAttribute('report_answered_count', $answeredCount);
+                $session->setAttribute('report_total_questions', $totalQuestions);
+                $session->setAttribute('report_question_progress', $questionProgress);
+                $session->setAttribute('report_time_seconds', $timeSeconds);
+                $session->setAttribute('report_sort_last_active', $lastActivityTimestamp);
+                $session->setAttribute('report_sort_submitted', $submittedTimestamp);
+                $session->setAttribute('report_sort_questions', $questionProgress);
+                $session->setAttribute('report_sort_score', $scoreSort);
+                $session->setAttribute('report_sort_time', $timeSeconds ?? -1);
+
+                return $session;
+            })
+            ->sortBy(
+                match ($sort) {
+                    'questions' => 'report_sort_questions',
+                    'score' => 'report_sort_score',
+                    'time' => 'report_sort_time',
+                    'submitted' => 'report_sort_submitted',
+                    default => 'report_sort_last_active',
+                },
+                SORT_REGULAR,
+                $direction === 'desc',
+            )
+            ->values();
+
+        $sessions = $this->paginateCollection($sessions, 60, $request);
 
         $stats = [
             'total'     => $assignment->sessions()->count(),
@@ -35,7 +100,14 @@ class ReportController extends Controller
             'avg_score' => $assignment->sessions()->where('status', 'graded')->avg('score'),
         ];
 
-        return view('admin.reports.index', compact('assignment', 'sessions', 'stats', 'effectiveMaxScore'));
+        return view('admin.reports.index', compact(
+            'assignment',
+            'sessions',
+            'stats',
+            'effectiveMaxScore',
+            'sort',
+            'direction',
+        ));
     }
 
     public function export(Quiz $quiz, QuizAssignment $assignment): StreamedResponse
@@ -142,5 +214,23 @@ class ReportController extends Controller
     private function ensureSessionBelongsToAssignment(QuizAssignment $assignment, QuizSession $session): void
     {
         abort_unless($session->assignment_id === $assignment->id, 404);
+    }
+
+    private function paginateCollection($items, int $perPage, Request $request): LengthAwarePaginator
+    {
+        $page = max(1, (int) $request->integer('page', 1));
+        $total = $items->count();
+        $results = $items->slice(($page - 1) * $perPage, $perPage)->values();
+
+        return new LengthAwarePaginator(
+            $results,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => Paginator::resolveCurrentPath(),
+                'query' => $request->query(),
+            ],
+        );
     }
 }
