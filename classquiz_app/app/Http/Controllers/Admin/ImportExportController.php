@@ -9,6 +9,7 @@ use App\Services\QuizExportService;
 use App\Services\QuizImportService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class ImportExportController extends Controller
@@ -24,7 +25,7 @@ class ImportExportController extends Controller
 
         $data = $this->exporter->export($quiz);
 
-        $filename = 'quiz-' . $quiz->id . '-' . now()->format('Ymd') . '.json';
+        $filename = $this->makeExportFilename($quiz->title, 'json');
 
         return response()->json($data)
             ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
@@ -65,7 +66,10 @@ class ImportExportController extends Controller
         ];
 
         if ($request->boolean('download', true)) {
-            $filename = 'question-' . $question->id . '-' . now()->format('Ymd') . '.json';
+            $filename = $this->makeExportFilename(
+                ($quiz->title ?: 'quiz') . '-question-' . $question->id,
+                'json'
+            );
 
             return response()->json($data)
                 ->header('Content-Disposition', 'attachment; filename="' . $filename . '"');
@@ -101,5 +105,16 @@ class ImportExportController extends Controller
 
         return redirect()->route('admin.quizzes.questions.index', $quiz)
             ->with('success', 'Quiz imported successfully.');
+    }
+
+    private function makeExportFilename(string $title, string $extension): string
+    {
+        $slug = Str::slug($title);
+
+        if ($slug === '') {
+            $slug = 'export';
+        }
+
+        return $slug . '-' . now()->format('Ymd-His') . '.' . $extension;
     }
 }

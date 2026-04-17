@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportController extends Controller
@@ -121,9 +122,14 @@ class ReportController extends Controller
             ->orderByDesc('submitted_at')
             ->get();
 
+        $titleSlug = Str::slug($assignment->displayTitle());
+        if ($titleSlug === '') {
+            $titleSlug = 'assignment-report';
+        }
+
         $filename = sprintf(
-            'report-%s-%s.csv',
-            $assignment->id,
+            '%s-%s.csv',
+            $titleSlug,
             now()->format('Ymd-His')
         );
 
