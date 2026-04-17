@@ -113,7 +113,7 @@
                     <td class="px-5 py-3">
                         @if($session->score !== null)
                         <span class="font-medium text-gray-800">{{ $session->score }}</span>
-                        <span class="text-gray-400">/ {{ $session->max_score }}</span>
+                        <span class="text-gray-400">/ {{ rtrim(rtrim(number_format($effectiveMaxScore, 2, '.', ''), '0'), '.') }}</span>
                         @else
                         <span class="text-gray-400">–</span>
                         @endif

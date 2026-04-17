@@ -21,6 +21,8 @@ class ReportController extends Controller
         Gate::authorize('view', $assignment);
         $this->ensureAssignmentBelongsToQuiz($quiz, $assignment);
 
+        $effectiveMaxScore = (float) $assignment->quiz->questions()->where('is_enabled', true)->sum('points');
+
         $sessions = $assignment->sessions()
             ->with('answers')
             ->orderByDesc('submitted_at')
@@ -33,13 +35,15 @@ class ReportController extends Controller
             'avg_score' => $assignment->sessions()->where('status', 'graded')->avg('score'),
         ];
 
-        return view('admin.reports.index', compact('assignment', 'sessions', 'stats'));
+        return view('admin.reports.index', compact('assignment', 'sessions', 'stats', 'effectiveMaxScore'));
     }
 
     public function export(Quiz $quiz, QuizAssignment $assignment): StreamedResponse
     {
         Gate::authorize('view', $assignment);
         $this->ensureAssignmentBelongsToQuiz($quiz, $assignment);
+
+        $effectiveMaxScore = (float) $assignment->quiz->questions()->where('is_enabled', true)->sum('points');
 
         $sessions = $assignment->sessions()
             ->orderByDesc('submitted_at')
@@ -76,7 +80,7 @@ class ReportController extends Controller
                     $session->class_id,
                     $session->status,
                     $session->score,
-                    $session->max_score,
+                    $effectiveMaxScore,
                     optional($session->started_at)?->toDateTimeString(),
                     optional($session->submitted_at)?->toDateTimeString(),
                     optional($session->last_activity_at)?->toDateTimeString(),
@@ -96,9 +100,11 @@ class ReportController extends Controller
         $this->ensureAssignmentBelongsToQuiz($quiz, $assignment);
         $this->ensureSessionBelongsToAssignment($assignment, $session);
 
+        $effectiveMaxScore = (float) $assignment->quiz->questions()->where('is_enabled', true)->sum('points');
+
         $session->load('answers.question.choices', 'answers.gradedBy');
 
-        return view('admin.reports.show', compact('assignment', 'session'));
+        return view('admin.reports.show', compact('assignment', 'session', 'effectiveMaxScore'));
     }
 
     public function grade(Quiz $quiz, QuizAssignment $assignment, QuizSession $session)

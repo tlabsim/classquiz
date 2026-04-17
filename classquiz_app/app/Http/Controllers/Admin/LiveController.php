@@ -72,9 +72,7 @@ class LiveController extends Controller
                 $questionProgress = $totalQuestions > 0
                     ? (int) round(($answeredCount / $totalQuestions) * 100)
                     : 0;
-                $maxScore = $session->max_score !== null
-                    ? (float) $session->max_score
-                    : (float) $enabledQuestions->sum('points');
+                $maxScore = (float) $enabledQuestions->sum('points');
                 $liveScore = $session->score !== null ? (float) $session->score : 0.0;
 
                 if ($session->score === null) {

@@ -12,7 +12,11 @@ class GradingService
 {
     public function gradeSession(QuizSession $session): void
     {
-        $session->load('assignment.quiz.questions.choices', 'answers');
+        $session->load([
+            'assignment.quiz.questions' => fn ($query) => $query->where('is_enabled', true),
+            'assignment.quiz.questions.choices',
+            'answers',
+        ]);
 
         DB::transaction(function () use ($session) {
             $totalScore = 0;
@@ -121,9 +125,16 @@ class GradingService
         ]);
 
         // Recalculate session total
-        $session = $answer->session()->with('answers')->first();
+        $session = $answer->session()->with([
+            'answers',
+            'assignment.quiz.questions' => fn ($query) => $query->where('is_enabled', true),
+        ])->first();
         $totalScore = $session->answers->sum(fn ($a) => (float) ($a->points_awarded ?? 0));
+        $maxScore = (float) $session->assignment->quiz->questions->sum('points');
 
-        $session->update(['score' => $totalScore]);
+        $session->update([
+            'score' => $totalScore,
+            'max_score' => $maxScore,
+        ]);
     }
 }

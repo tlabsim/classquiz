@@ -73,4 +73,24 @@ class QuizSession extends Model
 
         return $this->started_at->addMinutes($durationMinutes)->isPast();
     }
+
+    public function effectiveMaxScore(): float
+    {
+        if (
+            $this->relationLoaded('assignment')
+            && $this->assignment
+            && $this->assignment->relationLoaded('quiz')
+            && $this->assignment->quiz
+            && $this->assignment->quiz->relationLoaded('questions')
+        ) {
+            return (float) $this->assignment->quiz->questions->sum('points');
+        }
+
+        return (float) $this->assignment()
+            ->with(['quiz.questions' => fn ($query) => $query->where('is_enabled', true)])
+            ->first()
+            ?->quiz
+            ?->questions
+            ->sum('points');
+    }
 }
