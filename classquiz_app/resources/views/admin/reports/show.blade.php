@@ -44,7 +44,7 @@
     <div class="flex items-center gap-4">
         @if($session->score !== null)
         <div class="text-right">
-            <p class="text-2xl font-bold text-gray-900 leading-none">{{ $session->score }} <span class="text-sm text-gray-400 font-normal">/ {{ $session->max_score }}</span></p>
+            <p class="text-2xl font-bold text-gray-900 leading-none">{{ $session->score }} <span class="text-sm text-gray-400 font-normal">/ {{ rtrim(rtrim(number_format($effectiveMaxScore, 2, '.', ''), '0'), '.') }}</span></p>
             <p class="text-xs text-gray-400 mt-0.5">total score</p>
         </div>
         @endif

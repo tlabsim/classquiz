@@ -22,9 +22,10 @@
             @foreach($sessions as $session)
             @php
                 $title      = $session->assignment->quiz->title;
+                $effectiveMaxScore = $session->effectiveMaxScore();
                 $showScore  = $session->assignment->setting('show_result') && $session->status === 'graded';
                 $scoreText  = $showScore && $session->score !== null
-                                ? number_format($session->score, 1) . ' / ' . number_format($session->max_score, 1)
+                                ? number_format($session->score, 1) . ' / ' . number_format($effectiveMaxScore, 1)
                                 : '—';
                 $resultUrl  = route('quiz.result', $session->id);
                 $submitted  = $session->submitted_at?->format('d M Y, H:i') ?? '—';

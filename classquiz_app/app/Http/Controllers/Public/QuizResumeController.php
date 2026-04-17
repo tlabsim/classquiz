@@ -42,7 +42,10 @@ class QuizResumeController extends Controller
 
     public function result(QuizSession $session)
     {
-        $session->load('assignment.quiz', 'answers.question.choices');
+        $session->load([
+            'assignment.quiz.questions' => fn ($query) => $query->where('is_enabled', true),
+            'answers.question.choices',
+        ]);
 
         $showScore = $session->assignment->setting('show_score')
             && in_array($session->status, ['submitted', 'graded']);
