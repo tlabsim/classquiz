@@ -172,11 +172,55 @@ class ReportController extends Controller
         $this->ensureAssignmentBelongsToQuiz($quiz, $assignment);
         $this->ensureSessionBelongsToAssignment($assignment, $session);
 
-        $effectiveMaxScore = (float) $assignment->quiz->questions()->where('is_enabled', true)->sum('points');
+        $assignment->load(['quiz.questions' => fn ($query) => $query->where('is_enabled', true)]);
+        $effectiveMaxScore = (float) $assignment->quiz->questions->sum('points');
 
         $session->load('answers.question.choices', 'answers.gradedBy');
 
-        return view('admin.reports.show', compact('assignment', 'session', 'effectiveMaxScore'));
+        $enabledQuestionIds = $assignment->quiz->questions->pluck('id');
+        $relevantAnswers = $session->answers->whereIn('question_id', $enabledQuestionIds);
+        $answeredCount = $relevantAnswers->filter(fn ($answer) => !empty($answer->selected_choice_ids))->count();
+        $correctCount = $relevantAnswers->where('is_correct', true)->count();
+        $incorrectCount = max(0, $answeredCount - $correctCount);
+        $totalQuestions = $assignment->quiz->questions->count();
+        $scorePercent = $effectiveMaxScore > 0 && $session->score !== null
+            ? (int) round(((float) $session->score / $effectiveMaxScore) * 100)
+            : 0;
+        $questionProgress = $totalQuestions > 0
+            ? (int) round(($answeredCount / $totalQuestions) * 100)
+            : 0;
+
+        $timeSpentSeconds = null;
+        if ($session->started_at) {
+            $endedAt = $session->submitted_at
+                ?? $session->last_activity_at
+                ?? $session->updated_at
+                ?? now();
+
+            $timeSpentSeconds = max(0, $session->started_at->diffInSeconds($endedAt));
+        }
+
+        $summary = compact(
+            'answeredCount',
+            'correctCount',
+            'incorrectCount',
+            'totalQuestions',
+            'scorePercent',
+            'questionProgress',
+            'timeSpentSeconds',
+        );
+
+        $snapshotQuestions = collect($session->quiz_snapshot['questions'] ?? [])->keyBy('id');
+        $hasLegacyChoiceMismatch = $session->hasLegacyChoiceMismatch();
+
+        return view('admin.reports.show', compact(
+            'assignment',
+            'session',
+            'effectiveMaxScore',
+            'summary',
+            'snapshotQuestions',
+            'hasLegacyChoiceMismatch',
+        ));
     }
 
     public function grade(Quiz $quiz, QuizAssignment $assignment, QuizSession $session)
@@ -184,6 +228,12 @@ class ReportController extends Controller
         Gate::authorize('update', $assignment);
         $this->ensureAssignmentBelongsToQuiz($quiz, $assignment);
         $this->ensureSessionBelongsToAssignment($assignment, $session);
+
+        if ($session->hasLegacyChoiceMismatch()) {
+            return back()->withErrors([
+                'regrade' => 'This session cannot be safely re-graded from the current quiz because the answer choice references no longer match. The existing stored score was preserved.',
+            ]);
+        }
 
         $this->grading->gradeSession($session);
 

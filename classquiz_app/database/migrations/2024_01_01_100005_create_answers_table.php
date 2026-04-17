@@ -12,7 +12,7 @@ return new class extends Migration
             $table->id();
             $table->string('session_id', 26); // ULID length
             $table->foreign('session_id')->references('id')->on('quiz_sessions')->cascadeOnDelete();
-            $table->foreignId('question_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('question_id')->nullable()->constrained()->nullOnDelete();
             $table->json('selected_choice_ids')->nullable();
             $table->boolean('is_correct')->nullable();
             $table->decimal('points_awarded', 6, 2)->nullable();

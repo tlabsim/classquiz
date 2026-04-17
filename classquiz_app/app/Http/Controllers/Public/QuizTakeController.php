@@ -38,10 +38,17 @@ class QuizTakeController extends Controller
                 $questionIds = $questions->pluck('id')->values()->all();
             }
 
+            $questionsById = $questions->keyBy('id');
+            $orderedQuestionsForSnapshot = collect($questionIds)
+                ->map(fn ($id) => $questionsById->get($id))
+                ->filter()
+                ->values();
+
             $session->update([
                 'status'         => 'in_progress',
                 'started_at'     => now(),
                 'question_order' => $questionIds,
+                'quiz_snapshot'  => $session->buildQuizSnapshot($orderedQuestionsForSnapshot),
             ]);
         }
 
@@ -115,8 +122,24 @@ class QuizTakeController extends Controller
             ]);
         });
 
+        $gradedSession = $session->fresh([
+            'assignment.quiz.questions' => fn ($query) => $query->where('is_enabled', true),
+            'assignment.quiz.questions.choices',
+            'answers',
+        ]);
+
+        $questionsById = $gradedSession->assignment->quiz->questions->keyBy('id');
+        $orderedQuestionsForSnapshot = collect($gradedSession->question_order ?? $questionsById->keys()->all())
+            ->map(fn ($id) => $questionsById->get($id))
+            ->filter()
+            ->values();
+
+        $gradedSession->update([
+            'quiz_snapshot' => $gradedSession->buildQuizSnapshot($orderedQuestionsForSnapshot, $gradedSession->answers),
+        ]);
+
         // Auto-grade for objective questions
-        $this->grading->gradeSession($session->fresh());
+        $this->grading->gradeSession($gradedSession->fresh());
 
         $request->session()->forget('quiz.pending.' . $session->assignment_id);
         $request->session()->forget('quiz.ready.' . $session->assignment_id);

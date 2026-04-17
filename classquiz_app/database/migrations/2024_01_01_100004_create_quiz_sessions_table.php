@@ -20,6 +20,7 @@ return new class extends Migration
             $table->enum('status', ['pending', 'active', 'in_progress', 'submitted', 'graded'])
                   ->default('pending');
             $table->json('question_order')->nullable();
+            $table->json('quiz_snapshot')->nullable();
             $table->timestamp('started_at')->nullable();
             $table->timestamp('last_activity_at')->nullable();
             $table->timestamp('submitted_at')->nullable();
