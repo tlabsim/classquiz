@@ -44,9 +44,10 @@ class TakerResultsController extends Controller
         RateLimiter::hit($key, 600);
 
         $sessions = QuizSession::with([
+            'assignment.quiz',
             'assignment.quiz.questions' => fn ($query) => $query->where('is_enabled', true),
         ])
-            ->where('email', $email)
+            ->whereRaw('LOWER(email) = ?', [$email])
             ->whereIn('status', ['submitted', 'graded'])
             ->latest('submitted_at')
             ->get();

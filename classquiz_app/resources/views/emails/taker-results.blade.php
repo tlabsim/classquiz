@@ -23,7 +23,7 @@
             @php
                 $title      = $session->assignment->quiz->title;
                 $effectiveMaxScore = $session->effectiveMaxScore();
-                $showScore  = $session->assignment->setting('show_result') && $session->status === 'graded';
+                $showScore  = $session->assignment->setting('show_score') && $session->status === 'graded';
                 $scoreText  = $showScore && $session->score !== null
                                 ? number_format($session->score, 1) . ' / ' . number_format($effectiveMaxScore, 1)
                                 : '—';
@@ -35,7 +35,7 @@
                 <td style="padding: 12px; color: #6b7280; font-size: 0.875rem;">{{ $submitted }}</td>
                 <td style="padding: 12px; text-align: right; font-weight: 600;">{{ $scoreText }}</td>
                 <td style="padding: 12px; text-align: right;">
-                    @if($session->assignment->setting('show_result'))
+                    @if($session->assignment->setting('show_score'))
                     <a href="{{ $resultUrl }}"
                        style="color: #6366f1; font-size: 0.875rem; text-decoration: underline;">View</a>
                     @endif

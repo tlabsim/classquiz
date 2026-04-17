@@ -42,6 +42,7 @@ class QuizLandingController extends Controller
         $assignment->load('quiz');
 
         $data = $request->validate($this->registrationRules($assignment));
+        $data['email'] = strtolower(trim($data['email']));
 
         if (!$assignment->access_code_required && !$assignment->isAvailable()) {
             return back()->withErrors(['email' => 'This quiz is not currently available.'])->withInput();
@@ -104,6 +105,7 @@ class QuizLandingController extends Controller
             'class_id' => [$assignment->setting('collect_class_id', false) ? 'nullable' : 'prohibited', 'string', 'max:100'],
             'session_id' => ['nullable', 'string'],
         ]);
+        $data['email'] = strtolower(trim($data['email']));
 
         $this->ensureAttemptAvailable($assignment, $data['email']);
         $this->throttleOrFail('quiz-register:' . $request->ip(), 5, 'email');
@@ -197,7 +199,7 @@ class QuizLandingController extends Controller
         if (!$session) {
             $session = QuizSession::query()
                 ->where('assignment_id', $assignment->id)
-                ->where('email', $email)
+                ->whereRaw('LOWER(email) = ?', [$email])
                 ->where('status', 'pending')
                 ->latest()
                 ->first();
@@ -227,7 +229,7 @@ class QuizLandingController extends Controller
         $maxAttempts = (int) $assignment->setting('max_attempts', 1);
         $attemptCount = QuizSession::query()
             ->where('assignment_id', $assignment->id)
-            ->where('email', $email)
+            ->whereRaw('LOWER(email) = ?', [$email])
             ->whereIn('status', ['submitted', 'graded'])
             ->count();
 

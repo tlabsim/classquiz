@@ -143,7 +143,13 @@ SVG;
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <h2 class="text-sm font-semibold text-gray-900">{{ $assignment->displayTitle() }}</h2>
-                                <p class="mt-0.5 text-xs text-gray-500">{{ $quiz->title }} · {{ $sessions->count() }} live {{ \Illuminate\Support\Str::plural('session', $sessions->count()) }}</p>
+                                <p class="mt-0.5 text-xs text-gray-500">
+                                    <a href="{{ route('admin.quizzes.show', $quiz) }}"
+                                       class="hover:text-gray-700 transition-colors underline-offset-2 hover:underline">
+                                        {{ $quiz->title }}
+                                    </a>
+                                    · {{ $sessions->count() }} live {{ \Illuminate\Support\Str::plural('session', $sessions->count()) }}
+                                </p>
                             </div>
                             <a href="{{ route('admin.quizzes.assignments.show', [$quiz, $assignment]) }}"
                                class="cq-btn-secondary cq-btn-sm !py-1 !px-2.5 text-xs">
@@ -272,7 +278,8 @@ SVG;
                                 </td>
                             </tr>
                             <tr x-show="open" x-cloak class="bg-gray-50/60">
-                                <td colspan="8" class="px-5 py-4">
+                                <td></td>
+                                <td colspan="7" class="px-5 py-4">
                                     <div class="grid gap-4 text-xs text-gray-600 lg:grid-cols-4">
                                         <div>
                                             <p class="font-semibold uppercase tracking-wide text-gray-400">Student</p>

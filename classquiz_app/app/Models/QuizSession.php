@@ -34,6 +34,13 @@ class QuizSession extends Model
         ];
     }
 
+    protected function setEmailAttribute(?string $value): void
+    {
+        $this->attributes['email'] = $value !== null
+            ? strtolower(trim($value))
+            : null;
+    }
+
     public function assignment(): BelongsTo
     {
         return $this->belongsTo(QuizAssignment::class);
