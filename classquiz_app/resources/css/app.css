@@ -1,0 +1,265 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Alpine cloak ─────────────────────────────────────── */
+[x-cloak] { display: none !important; }
+
+/* ─── Design tokens ─────────────────────────────────────── */
+@layer base {
+    :root {
+        /* Surfaces */
+        --cq-bg:               #F3F4F6;
+        --cq-surface:          #FFFFFF;
+        --cq-border:           #E5E7EB;
+
+        /* Text */
+        --cq-text:             #111827;
+        --cq-text-muted:       #6B7280;
+        --cq-text-subtle:      #9CA3AF;
+
+        /* Brand / primary */
+        --cq-primary:          #10B981;
+        --cq-primary-dark:     #059669;
+        --cq-primary-faint:    #ECFDF5;
+
+        /* Semantic */
+        --cq-danger:           #EF4444;
+        --cq-danger-faint:     #FEF2F2;
+        --cq-success:          #10B981;
+        --cq-success-faint:    #ECFDF5;
+        --cq-warning:          #F59E0B;
+        --cq-warning-faint:    #FFFBEB;
+
+        /* Sidebar */
+        --cq-sidebar-bg:       #0F172A;
+
+        /* Tokens */
+        --cq-radius:           0.625rem;
+        --cq-radius-lg:        0.875rem;
+        --cq-shadow:           0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        --cq-shadow-md:        0 4px 16px rgba(0,0,0,0.08);
+    }
+}
+
+/* ─── Component classes ─────────────────────────────────── */
+@layer components {
+
+    /* ---- Inputs ---- */
+    .cq-field {
+        @apply w-full rounded-lg border border-gray-200 bg-white px-3.5 py-2.5
+               text-sm text-gray-900 placeholder-gray-400
+               shadow-sm transition-colors duration-150
+               focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 focus:outline-none;
+    }
+    .cq-field-error {
+        @apply border-red-300 focus:border-red-400 focus:ring-red-100;
+    }
+
+    /* ---- Buttons ---- */
+    .cq-btn {
+        @apply inline-flex items-center justify-center gap-2 rounded-lg
+               px-4 py-2.5 text-sm font-medium transition-colors duration-150
+               focus:outline-none focus:ring-2 focus:ring-offset-2
+               disabled:opacity-60 disabled:cursor-not-allowed;
+    }
+    .cq-btn-primary {
+        @apply cq-btn bg-emerald-600 text-white shadow-sm
+               hover:bg-emerald-700 focus:ring-emerald-500;
+    }
+    .cq-btn-secondary {
+        @apply cq-btn border border-gray-200 bg-white text-gray-700 shadow-sm
+               hover:bg-gray-50 focus:ring-emerald-500;
+    }
+    .cq-btn-danger {
+        @apply cq-btn bg-red-600 text-white shadow-sm
+               hover:bg-red-700 focus:ring-red-500;
+    }
+    .cq-btn-sm {
+        @apply px-3 py-1.5 text-xs;
+    }
+
+    /* ---- Card ---- */
+    .cq-card {
+        @apply bg-white rounded-xl border border-gray-100 shadow-sm;
+    }
+
+    /* ---- Status badges ---- */
+    .cq-badge {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
+    }
+    .cq-badge-gray   { @apply cq-badge bg-gray-100 text-gray-600; }
+    .cq-badge-green  { @apply cq-badge bg-emerald-50 text-emerald-700; }
+    .cq-badge-yellow { @apply cq-badge bg-amber-50 text-amber-700; }
+    .cq-badge-blue   { @apply cq-badge bg-emerald-50 text-emerald-700; }
+    .cq-badge-red    { @apply cq-badge bg-red-50 text-red-700; }
+
+    /* ---- Page heading ---- */
+    .cq-page-title {
+        @apply font-serif text-2xl font-normal text-gray-900;
+    }
+    .cq-section-title {
+        @apply text-base font-semibold text-gray-800;
+    }
+
+    .cq-form-section-title {
+        @apply text-lg font-semibold tracking-tight text-gray-950;
+    }
+
+    .cq-tooltip-anchor {
+        @apply inline-flex h-5 w-5 items-center justify-center rounded-full text-gray-400 transition-colors hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-200;
+    }
+
+    .cq-editor-btn {
+        @apply inline-flex h-8 w-8 items-center justify-center rounded-lg border border-gray-200
+               bg-white text-gray-500 transition-colors hover:border-emerald-200 hover:bg-emerald-50
+               hover:text-emerald-600 focus:outline-none focus:ring-2 focus:ring-emerald-400
+               disabled:cursor-not-allowed disabled:opacity-50;
+    }
+
+    .cq-editor {
+        @apply max-w-none leading-6;
+    }
+
+    .cq-richtext {
+        @apply max-w-none text-gray-800 leading-6;
+    }
+
+    .cq-question-card {
+        @apply rounded-lg bg-white p-6 shadow;
+    }
+
+    .cq-question-header {
+        @apply mb-3 flex items-start justify-between gap-4;
+    }
+
+    .cq-question-index {
+        @apply pt-0.5 font-medium text-gray-800;
+    }
+
+    .cq-question-points {
+        @apply ml-4 shrink-0 text-xs text-gray-400;
+    }
+
+    .cq-question-choice {
+        @apply flex items-center gap-3 rounded p-2 hover:bg-gray-50;
+    }
+
+    .cq-question-choice-input {
+        @apply text-emerald-600;
+    }
+
+}
+
+.cq-tooltip {
+    pointer-events: none;
+    position: fixed;
+    z-index: 80;
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+    transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.cq-tooltip.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.cq-tooltip-bubble {
+    position: relative;
+    max-width: min(20rem, calc(100vw - 16px));
+    border: 1px solid rgba(17, 24, 39, 0.92);
+    border-radius: 0.75rem;
+    background: rgba(3, 7, 18, 0.96);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.24);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.cq-tooltip-content {
+    padding: 0.5rem 0.75rem;
+    font-size: 11px;
+    line-height: 1.1rem;
+    font-weight: 500;
+    color: #fff;
+}
+
+.cq-tooltip-arrow {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: rgba(3, 7, 18, 0.96);
+    transform: rotate(45deg);
+}
+
+.cq-tooltip[data-placement="top"] .cq-tooltip-arrow {
+    bottom: -6px;
+    left: calc(var(--cq-tooltip-arrow-x, 50%) - 5px);
+    border-right: 1px solid rgba(17, 24, 39, 0.92);
+    border-bottom: 1px solid rgba(17, 24, 39, 0.92);
+}
+
+.cq-tooltip[data-placement="bottom"] .cq-tooltip-arrow {
+    top: -6px;
+    left: calc(var(--cq-tooltip-arrow-x, 50%) - 5px);
+    border-left: 1px solid rgba(17, 24, 39, 0.92);
+    border-top: 1px solid rgba(17, 24, 39, 0.92);
+}
+
+.cq-tooltip[data-placement="left"] .cq-tooltip-arrow {
+    right: -6px;
+    top: calc(var(--cq-tooltip-arrow-y, 50%) - 5px);
+    border-right: 1px solid rgba(17, 24, 39, 0.92);
+    border-top: 1px solid rgba(17, 24, 39, 0.92);
+}
+
+.cq-tooltip[data-placement="right"] .cq-tooltip-arrow {
+    left: -6px;
+    top: calc(var(--cq-tooltip-arrow-y, 50%) - 5px);
+    border-left: 1px solid rgba(17, 24, 39, 0.92);
+    border-bottom: 1px solid rgba(17, 24, 39, 0.92);
+}
+
+@layer components {
+    .cq-editor p,
+    .cq-richtext p,
+    .cq-editor ul,
+    .cq-richtext ul,
+    .cq-editor ol,
+    .cq-richtext ol,
+    .cq-editor blockquote,
+    .cq-richtext blockquote,
+    .cq-editor h2,
+    .cq-richtext h2,
+    .cq-editor h3,
+    .cq-richtext h3,
+    .cq-editor h4,
+    .cq-richtext h4 {
+        @apply my-2;
+    }
+
+    .cq-editor ul,
+    .cq-richtext ul {
+        @apply list-disc pl-6;
+    }
+
+    .cq-editor ol,
+    .cq-richtext ol {
+        @apply list-decimal pl-6;
+    }
+
+    .cq-editor blockquote,
+    .cq-richtext blockquote {
+        @apply border-l-4 border-gray-200 pl-4 italic text-gray-600;
+    }
+
+    .cq-editor a,
+    .cq-richtext a {
+        @apply text-emerald-600 underline underline-offset-2;
+    }
+
+    .cq-editor img,
+    .cq-richtext img {
+        @apply my-3 max-w-full rounded-lg border border-gray-200;
+    }
+}

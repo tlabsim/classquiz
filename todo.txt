@@ -1,0 +1,39 @@
+This is Laravel project for developing a quiz app for class tests without requiring login.
+It does have admin/teacher accounts to create and assign quizzes.
+
+
+
+Tech stack: 
+- Laravel for backend and frontend
+- Mysql
+- Tailwinds css (light mode UI for now)
+
+
+Workflow
+1. Teachers create and assign quizzes.
+- Two main workflow: create quiz and assign quiz (make quizzes available)
+- quiz question type (mainly true/false and mcq type wll later expand to matching and short answer types)
+- Admins can import and export quizzes as json (question + quiz settings), thus we need a simple yet flexible json format.
+- To assign quizzes, admin set availability and other quiz settings. A public link is generated for each quiz. Admins can rotate/change the public link for a quiz.
+- Teachers can view live and post quiz reports and override auto marking. BY befault quizzes are auto-marked/graded.
+
+2. For takers with a link, they are asked to provide an email and other info like class ID (for identification by admin/teacher) and name (if required by quiz settings)
+- An email is sent to the email with an access code.
+- WHen the quiz is available, the taker can provide the access code and start the quiz.
+
+
+
+Per question settings: 
+1. type (T/F, mcq - with option for 1+ correct answer)
+1. Points
+2. randomize choices
+3. partial points (for checkbox type mcq)
+
+
+Common quiz settings - 
+1. Require name?
+2. Registration window
+3. Availability window
+4. Duration 
+5. Radomize questions?
+6. Show result (With notification that results might change after manual grading)
