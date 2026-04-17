@@ -94,6 +94,16 @@
                             $statusClass = $session->status === 'in_progress'
                                 ? 'bg-emerald-100 text-emerald-700'
                                 : 'bg-blue-100 text-blue-700';
+                            $timeElapsedSeconds = $session->live_time_elapsed_seconds;
+                            $timeElapsedLabel = $timeElapsedSeconds !== null
+                                ? sprintf('%02d:%02d', intdiv($timeElapsedSeconds, 60), $timeElapsedSeconds % 60)
+                                : null;
+                            $durationLabel = $assignment->duration_minutes
+                                ? $assignment->duration_minutes . ' min'
+                                : null;
+                            $timeDisplayLabel = $timeElapsedLabel && $durationLabel
+                                ? $timeElapsedLabel . '/' . $durationLabel
+                                : null;
                             $searchBlob = strtolower(implode(' ', array_filter([
                                 $session->name,
                                 $session->email,
@@ -142,7 +152,7 @@
                                     @if($assignment->duration_minutes && $session->live_time_progress !== null)
                                         <div class="min-w-32">
                                             <div class="mb-1 flex items-center justify-between text-xs text-gray-500">
-                                                <span>{{ $assignment->duration_minutes }} min</span>
+                                                <span>{{ $timeDisplayLabel }}</span>
                                                 <span>{{ $session->live_time_progress }}%</span>
                                             </div>
                                             <div class="h-2 rounded-full bg-gray-100">
@@ -187,6 +197,9 @@
                                         <div>
                                             <p class="font-semibold uppercase tracking-wide text-gray-400">Assignment</p>
                                             <p class="mt-1">{{ $assignment->duration_minutes ? $assignment->duration_minutes . ' min duration' : 'No time limit' }}</p>
+                                            @if($assignment->duration_minutes && $timeDisplayLabel)
+                                                <p class="mt-1">Time elapsed: {{ $timeDisplayLabel }}</p>
+                                            @endif
                                             <p class="mt-1">{{ $assignment->access_code_required ? 'Access code required' : 'Direct start' }}</p>
                                         </div>
                                     </div>

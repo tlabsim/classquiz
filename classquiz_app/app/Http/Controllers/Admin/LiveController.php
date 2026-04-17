@@ -67,6 +67,7 @@ class LiveController extends Controller
                     $totalSeconds = max(1, $session->assignment->duration_minutes * 60);
                     $elapsedSeconds = min($session->started_at->diffInSeconds(now()), $totalSeconds);
                     $timeProgress = (int) round(($elapsedSeconds / $totalSeconds) * 100);
+                    $session->setAttribute('live_time_elapsed_seconds', $elapsedSeconds);
                 }
 
                 $session->setAttribute('live_total_questions', $totalQuestions);
