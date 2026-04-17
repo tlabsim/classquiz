@@ -16,6 +16,7 @@ class User extends Authenticatable
         'email',
         'password',
         'role',
+        'timezone',
     ];
 
     protected $hidden = [
@@ -29,6 +30,13 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    public function timezone(): string
+    {
+        return in_array($this->timezone, timezone_identifiers_list(), true)
+            ? $this->timezone
+            : config('app.timezone', 'UTC');
     }
 
     public function isAdmin(): bool

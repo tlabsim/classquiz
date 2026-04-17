@@ -4,6 +4,7 @@ use App\Http\Controllers\Public\TakerResultsController;
 use App\Http\Controllers\Admin\AssignmentController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ImportExportController;
+use App\Http\Controllers\Admin\LiveController;
 use App\Http\Controllers\Admin\QuestionImageController;
 use App\Http\Controllers\Admin\QuestionController;
 use App\Http\Controllers\Admin\QuizController;
@@ -27,6 +28,7 @@ Route::get('storage/question-images/{file}', [QuestionImageController::class, 's
 Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
 
     Route::get('/', DashboardController::class)->name('dashboard');
+    Route::get('/live', [LiveController::class, 'index'])->name('live');
 
     // Quizzes
     Route::resource('quizzes', QuizController::class);
@@ -54,6 +56,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
         // Reports (nested under assignment)
         Route::get('assignments/{assignment}/report',
             [ReportController::class, 'index'])->name('assignments.report');
+        Route::get('assignments/{assignment}/report/export',
+            [ReportController::class, 'export'])->name('assignments.report.export');
         Route::get('assignments/{assignment}/report/{session}',
             [ReportController::class, 'show'])->name('assignments.report.session');
         Route::post('assignments/{assignment}/report/{session}/grade',
@@ -76,11 +80,13 @@ Route::middleware('auth')->group(function () {
 });
 
 // ─── Public quiz routes ──────────────────────────────────────────────────────
-Route::prefix('q')->name('quiz.')->group(function () {
+Route::prefix('quiz')->name('quiz.')->group(function () {
 
     // Landing / Registration
     Route::get('{token}',        [QuizLandingController::class, 'show'])->name('show');
     Route::post('{token}',       [QuizLandingController::class, 'register'])->name('register');
+    Route::post('{token}/request-code', [QuizLandingController::class, 'requestCode'])->name('request-code');
+    Route::post('{token}/start', [QuizLandingController::class, 'start'])->name('start');
 
     // Access code verification
     Route::get('{token}/verify',  [AccessCodeController::class, 'showForm'])->name('verify');
@@ -103,6 +109,9 @@ Route::prefix('q')->name('quiz.')->group(function () {
     // Result page (public, session-based)
     Route::get('result/{session}', [QuizResumeController::class, 'result'])->name('result');
 });
+
+Route::redirect('q/{token}', '/quiz/{token}');
+Route::redirect('q/{token}/verify', '/quiz/{token}/verify');
 
 // ─── Taker results lookup ────────────────────────────────────────────────────
 Route::get('/my-results',  [TakerResultsController::class, 'show'])->name('taker.results');

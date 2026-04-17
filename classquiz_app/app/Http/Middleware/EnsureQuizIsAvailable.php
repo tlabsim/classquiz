@@ -14,9 +14,7 @@ class EnsureQuizIsAvailable
         $assignment = $request->route('assignment');
 
         if (!$assignment instanceof QuizAssignment) {
-            $assignment = QuizAssignment::where(
-                'public_token', $request->route('token')
-            )->firstOrFail();
+            $assignment = QuizAssignment::findByPublicTokenOrFail((string) $request->route('token'));
         }
 
         if (!$assignment->isAvailable()) {

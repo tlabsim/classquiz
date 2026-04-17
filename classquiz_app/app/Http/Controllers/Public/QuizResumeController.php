@@ -42,11 +42,13 @@ class QuizResumeController extends Controller
 
     public function result(QuizSession $session)
     {
-        $session->load('assignment.quiz', 'answers.question');
+        $session->load('assignment.quiz', 'answers.question.choices');
 
         $showScore = $session->assignment->setting('show_score')
             && in_array($session->status, ['submitted', 'graded']);
+        $showCorrectAnswers = $showScore && $session->assignment->setting('show_correct_answers', false);
+        $showFeedbackAndExplanation = $showCorrectAnswers && $session->assignment->setting('show_feedback_and_explanation', false);
 
-        return view('quiz.result', compact('session', 'showScore'));
+        return view('quiz.result', compact('session', 'showScore', 'showCorrectAnswers', 'showFeedbackAndExplanation'));
     }
 }

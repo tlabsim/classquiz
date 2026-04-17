@@ -13,17 +13,18 @@ class SessionResumeService
     public function storeCookie(string $sessionId): Cookie
     {
         $cookieName = self::COOKIE_PREFIX . $sessionId;
+        $secure = $this->shouldUseSecureCookies();
 
         return cookie(
             $cookieName,
             $sessionId,
             60 * 24, // 24 hours
-            '/',
-            null,
-            true,   // Secure
-            true,   // HttpOnly
+            config('session.path', '/'),
+            config('session.domain'),
+            $secure,
+            config('session.http_only', true),
             false,
-            'Strict'
+            config('session.same_site', 'lax'),
         );
     }
 
@@ -35,6 +36,23 @@ class SessionResumeService
 
     public function clearCookie(string $sessionId): Cookie
     {
-        return cookie()->forget(self::COOKIE_PREFIX . $sessionId);
+        return cookie()->forget(
+            self::COOKIE_PREFIX . $sessionId,
+            config('session.path', '/'),
+            config('session.domain'),
+            $this->shouldUseSecureCookies(),
+            config('session.same_site', 'lax'),
+        );
+    }
+
+    private function shouldUseSecureCookies(): bool
+    {
+        $configured = config('session.secure');
+
+        if ($configured !== null) {
+            return (bool) $configured;
+        }
+
+        return request()?->isSecure() ?? false;
     }
 }

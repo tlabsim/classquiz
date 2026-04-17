@@ -7,17 +7,25 @@ use App\Http\Requests\Public\SubmitAnswersRequest;
 use App\Models\Answer;
 use App\Models\QuizSession;
 use App\Services\GradingService;
+use App\Services\SessionResumeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 
 class QuizTakeController extends Controller
 {
-    public function __construct(private GradingService $grading) {}
+    public function __construct(
+        private GradingService $grading,
+        private SessionResumeService $resumeService,
+    ) {}
 
     public function show(QuizSession $session)
     {
-        $session->load('assignment.quiz.questions.choices', 'answers');
+        $session->load([
+            'assignment.quiz.questions' => fn ($query) => $query->where('is_enabled', true),
+            'assignment.quiz.questions.choices',
+            'answers',
+        ]);
 
         if (!$session->hasStarted()) {
             $assignment = $session->assignment;
@@ -54,7 +62,11 @@ class QuizTakeController extends Controller
         $answeredMap = $session->answers->keyBy('question_id');
         $timeRemaining = $this->getTimeRemaining($session);
 
-        return view('quiz.take', compact('session', 'orderedQuestions', 'answeredMap', 'timeRemaining'));
+        return response()
+            ->view('quiz.take', compact('session', 'orderedQuestions', 'answeredMap', 'timeRemaining'))
+            ->header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+            ->header('Pragma', 'no-cache')
+            ->header('Expires', 'Fri, 01 Jan 1990 00:00:00 GMT');
     }
 
     public function autoSave(Request $request, QuizSession $session)
@@ -106,10 +118,14 @@ class QuizTakeController extends Controller
         // Auto-grade for objective questions
         $this->grading->gradeSession($session->fresh());
 
+        $request->session()->forget('quiz.pending.' . $session->assignment_id);
+        $request->session()->forget('quiz.ready.' . $session->assignment_id);
+
         $showScore = $session->assignment->setting('show_score');
 
         return redirect()->route('quiz.result', $session->id)
-            ->with('show_score', $showScore);
+            ->with('show_score', $showScore)
+            ->withCookie($this->resumeService->clearCookie($session->id));
     }
 
     private function getTimeRemaining(QuizSession $session): ?int

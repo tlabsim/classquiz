@@ -18,7 +18,8 @@ class QuizController extends Controller
 
         $query = Quiz::with(['creator', 'assignments' => fn ($q) => $q->latest()->limit(3)->withCount('sessions')])
             ->when(!$request->user()->isAdmin(), fn ($q) => $q->where('creator_id', $request->user()->id))
-            ->withCount('questions');
+            ->withCount(['questions', 'assignments'])
+            ->withMax('assignments', 'created_at');
 
         // Search
         if ($search = $request->input('search')) {
@@ -32,6 +33,14 @@ class QuizController extends Controller
             'title_asc'  => $query->orderBy('title'),
             'title_desc' => $query->orderByDesc('title'),
             'questions'  => $query->orderByDesc('questions_count'),
+            'assignments_recent' => $query
+                ->orderByRaw('assignments_max_created_at IS NULL')
+                ->orderByDesc('assignments_max_created_at')
+                ->latest(),
+            'assignments_oldest' => $query
+                ->orderByRaw('assignments_max_created_at IS NULL')
+                ->orderBy('assignments_max_created_at')
+                ->latest(),
             default      => $query->latest(),
         };
 
@@ -44,6 +53,37 @@ class QuizController extends Controller
     {
         Gate::authorize('create', Quiz::class);
         return view('admin.quizzes.create');
+    }
+
+    public function show(Quiz $quiz)
+    {
+        Gate::authorize('view', $quiz);
+
+        $quiz->load([
+            'creator',
+            'questions' => fn ($query) => $query->withCount('choices'),
+            'assignments' => fn ($query) => $query
+                ->withCount('sessions')
+                ->latest()
+                ->limit(5),
+        ]);
+
+        $questions = $quiz->questions;
+        $enabledQuestions = $questions->where('is_enabled', true);
+        $assignments = $quiz->assignments;
+        $activeAssignments = $assignments->where('is_active', true);
+
+        $stats = [
+            'question_count' => $questions->count(),
+            'enabled_question_count' => $enabledQuestions->count(),
+            'question_points' => $questions->sum('points'),
+            'enabled_question_points' => $enabledQuestions->sum('points'),
+            'assignment_count' => $quiz->assignments()->count(),
+            'active_assignment_count' => $activeAssignments->count(),
+            'session_count' => $quiz->assignments()->withCount('sessions')->get()->sum('sessions_count'),
+        ];
+
+        return view('admin.quizzes.show', compact('quiz', 'assignments', 'stats'));
     }
 
     public function store(StoreQuizRequest $request)
@@ -61,6 +101,9 @@ class QuizController extends Controller
     public function edit(Quiz $quiz)
     {
         Gate::authorize('update', $quiz);
+
+        $quiz->loadCount(['questions', 'assignments']);
+
         return view('admin.quizzes.edit', compact('quiz'));
     }
 

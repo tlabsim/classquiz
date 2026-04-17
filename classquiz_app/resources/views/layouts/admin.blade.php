@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Dashboard') — {{ config('app.name') }}</title>
+    <link rel="icon" type="image/png" href="{{ asset('classquiz.png') }}">
 
     {{-- Fonts: DM Sans + DM Serif Display --}}
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -58,6 +59,16 @@
                           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                 </svg>
                 Dashboard
+            </a>
+
+            <a href="{{ route('admin.live') }}"
+               class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-100
+                      {{ request()->routeIs('admin.live') ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
+                <svg class="h-4 w-4 shrink-0 {{ request()->routeIs('admin.live') ? 'text-emerald-600' : 'text-gray-400' }}"
+                     fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M6.343 4.938a1 1 0 0 1 0 1.415a8.003 8.003 0 0 0 0 11.317a1 1 0 1 1-1.414 1.414c-3.907-3.906-3.907-10.24 0-14.146a1 1 0 0 1 1.414 0m12.732 0c3.906 3.907 3.906 10.24 0 14.146a1 1 0 0 1-1.415-1.414a8.003 8.003 0 0 0 0-11.317a1 1 0 0 1 1.415-1.415M9.31 7.812a1 1 0 0 1 0 1.414a3.92 3.92 0 0 0 0 5.544a1 1 0 1 1-1.415 1.414a5.92 5.92 0 0 1 0-8.372a1 1 0 0 1 1.415 0m6.958 0a5.92 5.92 0 0 1 0 8.372a1 1 0 0 1-1.414-1.414a3.92 3.92 0 0 0 0-5.544a1 1 0 0 1 1.414-1.414m-4.186 2.77a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3"/>
+                </svg>
+                Live
             </a>
 
             {{-- Quizzes --}}
@@ -118,15 +129,16 @@
 
         {{-- User footer --}}
         <div class="shrink-0 border-t border-gray-100 p-3">
-            <div class="flex items-center gap-3 rounded-lg px-2 py-2">
+            <a href="{{ route('profile.edit') }}"
+               class="flex items-center gap-3 rounded-lg px-2 py-2 transition-colors duration-100 hover:bg-gray-100">
                 <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-sm font-semibold text-white">
                     {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                 </div>
                 <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-medium text-gray-800">{{ auth()->user()->name }}</p>
-                    <p class="truncate text-xs text-gray-400">{{ ucfirst(auth()->user()->role) }}</p>
+                    <p class="truncate text-xs text-gray-400">{{ ucfirst(auth()->user()->role) }} · {{ auth()->user()->timezone() }}</p>
                 </div>
-            </div>
+            </a>
             <form method="POST" action="{{ route('logout') }}" class="mt-1">
                 @csrf
                 <button type="submit"
@@ -148,9 +160,9 @@
     <div class="flex min-h-full flex-1 flex-col lg:pl-64">
 
         {{-- Top bar --}}
-        <header class="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-4
+        <header class="sticky top-0 z-10 flex min-h-14 shrink-0 items-start gap-4
                        border-b border-gray-200 bg-white/80 backdrop-blur-sm
-                       px-4 sm:px-6 lg:px-8">
+                       px-4 py-2 sm:items-center sm:px-6 lg:px-8">
             {{-- Mobile hamburger --}}
             <button type="button"
                     @click="sidebarOpen = !sidebarOpen"
@@ -161,8 +173,10 @@
                 </svg>
             </button>
             {{-- Breadcrumb / contextual header --}}
-            <div class="flex-1 text-sm text-gray-500">
-                @yield('breadcrumb')
+            <div class="min-w-0 flex-1 pt-0.5 sm:pt-0">
+                <div data-breadcrumbs class="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-500">
+                    @yield('breadcrumb')
+                </div>
             </div>
         </header>
 

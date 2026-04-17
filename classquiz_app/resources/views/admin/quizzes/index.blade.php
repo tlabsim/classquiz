@@ -16,9 +16,8 @@
     </div>
     <div class="flex items-center gap-2">
         <a href="{{ route('admin.import') }}" class="cq-btn-secondary cq-btn-sm">
-            <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3 3m0 0l-3-3m3 3V8"/>
+            <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M8 8a1 1 0 0 0 0 2h1a1 1 0 0 0 0-2Zm5 12H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5v3a3 3 0 0 0 3 3h3v2a1 1 0 0 0 2 0V8.94a1.3 1.3 0 0 0-.06-.27v-.09a1 1 0 0 0-.19-.28l-6-6a1 1 0 0 0-.28-.19a.3.3 0 0 0-.1 0a1.1 1.1 0 0 0-.31-.11H6a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h7a1 1 0 0 0 0-2m0-14.59L15.59 8H14a1 1 0 0 1-1-1ZM14 12H8a1 1 0 0 0 0 2h6a1 1 0 0 0 0-2m6.71 6.29a1 1 0 0 0-1.42 0l-.29.3V16a1 1 0 0 0-2 0v2.59l-.29-.3a1 1 0 0 0-1.42 1.42l2 2a1 1 0 0 0 .33.21a.94.94 0 0 0 .76 0a1 1 0 0 0 .33-.21l2-2a1 1 0 0 0 0-1.42M12 18a1 1 0 0 0 0-2H8a1 1 0 0 0 0 2Z"/>
             </svg>
             Import JSON
         </a>
@@ -33,8 +32,8 @@
 
 {{-- Search + sort toolbar --}}
 <form method="GET" action="{{ route('admin.quizzes.index') }}"
-      class="mb-5 flex flex-wrap items-center gap-3">
-    <div class="relative flex-1 min-w-48">
+      class="mb-5 grid gap-3 lg:grid-cols-3">
+    <div class="relative min-w-0 lg:col-span-2">
         <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none"
              fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -45,16 +44,18 @@
                class="cq-field pl-9 py-2 text-sm w-full">
     </div>
     <select name="sort" onchange="this.form.submit()"
-            class="cq-field py-2 text-sm pr-8 min-w-40">
+            class="cq-field min-w-0 w-full py-2 pr-8 text-sm">
         <option value="newest"     {{ $sort === 'newest'     ? 'selected' : '' }}>Newest first</option>
         <option value="oldest"     {{ $sort === 'oldest'     ? 'selected' : '' }}>Oldest first</option>
         <option value="title_asc"  {{ $sort === 'title_asc'  ? 'selected' : '' }}>Title A&ndash;Z</option>
         <option value="title_desc" {{ $sort === 'title_desc' ? 'selected' : '' }}>Title Z&ndash;A</option>
         <option value="questions"  {{ $sort === 'questions'  ? 'selected' : '' }}>Most questions</option>
+        <option value="assignments_recent" {{ $sort === 'assignments_recent' ? 'selected' : '' }}>Recent assignments</option>
+        <option value="assignments_oldest" {{ $sort === 'assignments_oldest' ? 'selected' : '' }}>Old assignments</option>
     </select>
     @if($search)
     <a href="{{ route('admin.quizzes.index') }}"
-       class="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+       class="text-sm text-gray-400 transition-colors hover:text-gray-600 lg:col-span-3">
         Clear
     </a>
     @endif
@@ -88,7 +89,10 @@
 
             {{-- Title + meta --}}
             <div class="min-w-0 flex-1">
-                <p class="font-semibold text-gray-900 truncate">{{ $quiz->title }}</p>
+                <a href="{{ route('admin.quizzes.show', $quiz) }}"
+                   class="block truncate font-semibold text-gray-900 transition-colors hover:text-emerald-700">
+                    {{ $quiz->title }}
+                </a>
                 <p class="text-xs text-gray-400 mt-0.5">
                     by {{ $quiz->creator->name }}
                     &middot; {{ $quiz->questions_count }} {{ Str::plural('question', $quiz->questions_count) }}
@@ -98,13 +102,23 @@
 
             {{-- Action buttons --}}
             <div class="flex items-center gap-1 shrink-0">
+                <a href="{{ route('admin.quizzes.show', $quiz) }}"
+                   class="cq-btn-secondary cq-btn-sm hidden sm:inline-flex">
+                    Overview
+                </a>
                 <a href="{{ route('admin.quizzes.questions.index', $quiz) }}"
                    class="cq-btn-secondary cq-btn-sm hidden sm:inline-flex">
                     Questions
+                    <span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold text-gray-700">
+                        {{ $quiz->questions_count }}
+                    </span>
                 </a>
                 <a href="{{ route('admin.quizzes.assignments.index', $quiz) }}"
                    class="cq-btn-secondary cq-btn-sm hidden sm:inline-flex">
                     Assignments
+                    <span class="ml-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold text-gray-700">
+                        {{ $quiz->assignments_count }}
+                    </span>
                 </a>
                 <a href="{{ route('admin.quizzes.edit', $quiz) }}"
                    class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
@@ -117,9 +131,8 @@
                 <a href="{{ route('admin.quizzes.export', $quiz) }}"
                    class="flex h-8 w-8 items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
                    title="Export quiz">
-                    <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                              d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M20.92 15.62a1.2 1.2 0 0 0-.21-.33l-3-3a1 1 0 0 0-1.42 1.42l1.3 1.29H12a1 1 0 0 0 0 2h5.59l-1.3 1.29a1 1 0 0 0 0 1.42a1 1 0 0 0 1.42 0l3-3a.9.9 0 0 0 .21-.33a1 1 0 0 0 0-.76M14 20H6a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h5v3a3 3 0 0 0 3 3h4a1 1 0 0 0 .92-.62a1 1 0 0 0-.21-1.09l-6-6a1 1 0 0 0-.28-.19h-.09l-.28-.1H6a3 3 0 0 0-3 3v14a3 3 0 0 0 3 3h8a1 1 0 0 0 0-2M13 5.41L15.59 8H14a1 1 0 0 1-1-1Z"/>
                     </svg>
                 </a>
                 <form method="POST" action="{{ route('admin.quizzes.destroy', $quiz) }}"
@@ -150,8 +163,9 @@
 
             {{-- Mobile nav shortcuts --}}
             <div class="flex gap-2 mb-4 sm:hidden">
-                <a href="{{ route('admin.quizzes.questions.index', $quiz) }}" class="cq-btn-secondary cq-btn-sm">Questions</a>
-                <a href="{{ route('admin.quizzes.assignments.index', $quiz) }}" class="cq-btn-secondary cq-btn-sm">Assignments</a>
+                <a href="{{ route('admin.quizzes.show', $quiz) }}" class="cq-btn-secondary cq-btn-sm">Overview</a>
+                <a href="{{ route('admin.quizzes.questions.index', $quiz) }}" class="cq-btn-secondary cq-btn-sm">Questions <span class="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold text-gray-700">{{ $quiz->questions_count }}</span></a>
+                <a href="{{ route('admin.quizzes.assignments.index', $quiz) }}" class="cq-btn-secondary cq-btn-sm">Assignments <span class="ml-1 inline-flex min-w-5 items-center justify-center rounded-full bg-gray-200 px-1.5 py-0.5 text-[11px] font-semibold text-gray-700">{{ $quiz->assignments_count }}</span></a>
             </div>
 
             <p class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Recent assignments</p>
@@ -223,4 +237,3 @@
 @endif
 
 @endsection
-

@@ -65,27 +65,20 @@
     $formErrors = collect($errors->all())->unique()->values();
     @endphp
 
-<form method="POST"
-      action="{{ $action }}"
-      class="mx-auto max-w-3xl"
-      data-question-form='@json($questionFormConfig)'
-      x-data="window.questionForm(JSON.parse($el.dataset.questionForm))"
-      x-init="init()"
-      @submit="syncAllEditors()">
-    @csrf
-    @isset($method)
-        @method($method)
-    @endisset
-
-    <input type="hidden" name="type" :value="type">
-    <textarea x-ref="textInput" name="text" class="hidden" x-model="text"></textarea>
-
+<div class="mx-auto max-w-3xl"
+     x-data="window.questionForm(@js($questionFormConfig))"
+     x-init="init()">
     @if($formErrors->isNotEmpty())
-        <div x-data="{ open: true }"
-             x-show="open"
+        <div x-show="showFormNotice"
              x-cloak
-             class="fixed inset-x-0 top-5 z-50 px-4">
-            <div class="mx-auto max-w-3xl rounded-2xl border border-red-200/80 bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur">
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 -translate-y-2"
+             x-transition:enter-end="opacity-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 translate-y-0"
+             x-transition:leave-end="opacity-0 -translate-y-2"
+             class="sticky top-20 z-40 pb-4">
+            <div class="rounded-2xl bg-white/95 shadow-[0_20px_60px_rgba(15,23,42,0.16)] backdrop-blur-md">
                 <div class="flex items-start gap-4 px-5 py-4">
                     <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
                         <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -101,7 +94,7 @@
                         </ul>
                     </div>
                     <button type="button"
-                            @click="open = false"
+                            @click="showFormNotice = false"
                             class="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600">
                         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -111,6 +104,18 @@
             </div>
         </div>
     @endif
+
+<form method="POST"
+      action="{{ $action }}"
+      class="relative"
+      @submit="syncAllEditors()">
+    @csrf
+    @isset($method)
+        @method($method)
+    @endisset
+
+    <input type="hidden" name="type" :value="type">
+    <textarea x-ref="textInput" name="text" class="hidden" x-model="text"></textarea>
 
     <div class="mb-6 flex items-center justify-between">
         <div>
@@ -533,47 +538,56 @@
             <h2 class="text-lg font-semibold text-gray-900">Preview</h2>
         </div>
 
-        <div class="bg-gray-50 px-6 py-6">
+        <div class="max-h-[calc(100vh-13rem)] overflow-y-auto bg-gray-50 px-6 py-6">
             <div class="cq-question-card">
-                <div class="cq-question-header">
-                    <div class="flex items-start gap-3">
-                        <span class="cq-question-index leading-6">1.</span>
-                        <div class="cq-richtext font-medium text-gray-800" x-html="previewText()"></div>
+                <div class="grid grid-cols-[3rem_minmax(0,1fr)] gap-x-4 gap-y-3">
+                    <div class="flex justify-center pt-1">
+                        <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-base font-semibold text-white shadow-sm">1</span>
                     </div>
-                    <span class="cq-question-points" x-text="previewPoints()"></span>
-                </div>
 
-                <template x-if="type === 'mcq_single' || type === 'tf'">
-                    <div class="space-y-2">
-                        <template x-for="(choice, i) in previewChoices()" :key="'single-' + i">
-                            <label class="cq-question-choice cursor-default">
-                                <input type="radio"
-                                       name="preview-single"
-                                       :checked="previewSelectedSingle === i"
-                                       @change="previewSelectedSingle = i"
-                                       class="cq-question-choice-input">
-                                <span class="cq-richtext text-sm text-gray-700" x-html="choice.text"></span>
-                            </label>
-                        </template>
-                    </div>
-                </template>
-
-                <template x-if="type === 'mcq_multi'">
-                    <div>
-                        <p class="mb-2 text-xs text-emerald-600">Select all that apply.</p>
-                        <div class="space-y-2">
-                            <template x-for="(choice, i) in previewChoices()" :key="'multi-' + i">
-                                <label class="cq-question-choice cursor-default">
-                                    <input type="checkbox"
-                                           :checked="previewSelectedMulti.includes(i)"
-                                           @change="togglePreviewMulti(i)"
-                                           class="cq-question-choice-input">
-                                    <span class="cq-richtext text-sm text-gray-700" x-html="choice.text"></span>
-                                </label>
-                            </template>
+                    <div class="min-w-0">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="cq-richtext min-w-0 pt-2.5 text-base font-medium text-gray-800" x-html="previewText()"></div>
+                            <span class="cq-question-points" x-text="previewPoints()"></span>
                         </div>
                     </div>
-                </template>
+
+                    <div></div>
+
+                    <div class="min-w-0">
+                        <template x-if="type === 'mcq_single' || type === 'tf'">
+                            <div class="space-y-2">
+                                <template x-for="(choice, i) in previewChoices()" :key="'single-' + i">
+                                    <label class="cq-question-choice cursor-default">
+                                        <input type="radio"
+                                               name="preview-single"
+                                               :checked="previewSelectedSingle === i"
+                                               @change="previewSelectedSingle = i"
+                                               class="cq-question-choice-input">
+                                        <span class="cq-richtext text-sm text-gray-700" x-html="choice.text"></span>
+                                    </label>
+                                </template>
+                            </div>
+                        </template>
+
+                        <template x-if="type === 'mcq_multi'">
+                            <div>
+                                <p class="mb-2 text-xs text-emerald-600">Select all that apply.</p>
+                                <div class="space-y-2">
+                                    <template x-for="(choice, i) in previewChoices()" :key="'multi-' + i">
+                                        <label class="cq-question-choice cursor-default">
+                                            <input type="checkbox"
+                                                   :checked="previewSelectedMulti.includes(i)"
+                                                   @change="togglePreviewMulti(i)"
+                                                   class="cq-question-choice-input">
+                                            <span class="cq-richtext text-sm text-gray-700" x-html="choice.text"></span>
+                                        </label>
+                                    </template>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -584,6 +598,7 @@
         </div>
     </x-modal>
 </form>
+</div>
 
 <script>
 window.questionForm = function questionForm(config) {
@@ -603,6 +618,7 @@ window.questionForm = function questionForm(config) {
         uploadUrl: config.uploadUrl,
         csrf: config.csrf,
         uploadingImage: false,
+        showFormNotice: true,
         previewSelectedSingle: null,
         previewSelectedMulti: [],
         previewChoiceOrder: [],

@@ -3,12 +3,10 @@
 namespace App\Http\Controllers\Public;
 
 use App\Http\Controllers\Controller;
+use App\Mail\AccessCodeMail;
 use App\Models\QuizAssignment;
 use App\Models\QuizSession;
 use App\Services\AccessCodeService;
-use App\Services\SessionResumeService;
-use App\Services\TokenService;
-use App\Mail\ResumeQuizMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
@@ -16,29 +14,25 @@ use Illuminate\Validation\ValidationException;
 
 class AccessCodeController extends Controller
 {
-    public function __construct(
-        private AccessCodeService $accessCodes,
-        private TokenService $tokens,
-        private SessionResumeService $resumeService,
-    ) {}
+    public function __construct(private AccessCodeService $accessCodes) {}
 
     public function showForm(string $token)
     {
-        $assignment = QuizAssignment::where('public_token', $token)
-            ->firstOrFail();
-
-        return view('quiz.verify', compact('assignment'));
+        $assignment = QuizAssignment::findByPublicTokenOrFail($token);
+        return redirect()->route('quiz.show', $assignment->public_token);
     }
 
     public function verify(Request $request, string $token)
     {
-        $assignment = QuizAssignment::where('public_token', $token)
-            ->with('quiz')
-            ->firstOrFail();
+        $assignment = QuizAssignment::findByPublicTokenOrFail($token);
 
-        $request->validate([
+        if (!$assignment->access_code_required) {
+            return redirect()->route('quiz.show', $assignment->public_token);
+        }
+
+        $data = $request->validate([
             'session_id' => ['required', 'string'],
-            'code'       => ['required', 'string', 'size:6'],
+            'code' => ['required', 'string', 'size:6'],
         ]);
 
         $key = 'quiz-verify:' . $request->ip();
@@ -49,54 +43,39 @@ class AccessCodeController extends Controller
         }
         RateLimiter::hit($key, 60);
 
-        $session = QuizSession::where('id', $request->session_id)
+        $session = QuizSession::query()
+            ->where('id', $data['session_id'])
             ->where('assignment_id', $assignment->id)
             ->firstOrFail();
 
-        if (!$this->accessCodes->verify($session, strtoupper($request->code))) {
+        if (!$this->accessCodes->verify($session, strtoupper($data['code']))) {
             throw ValidationException::withMessages([
                 'code' => 'Invalid or expired access code.',
             ]);
         }
 
-        RateLimiter::clear($key);
+        $request->session()->put('quiz.pending.' . $assignment->id, $session->id);
+        $request->session()->put('quiz.ready.' . $assignment->id, $session->id);
 
-        $session->update(['status' => 'active']);
-
-        // Send resume link if enabled
-        if ($assignment->setting('allow_resume')) {
-            $plainToken = $this->tokens->generateResumeToken($session);
-            $resumeUrl  = $this->tokens->buildResumeUrl($session, $plainToken);
-
-            Mail::to($session->email)->send(new ResumeQuizMail(
-                $session,
-                $resumeUrl,
-                $assignment->displayTitle()
-            ));
-        }
-
-        $cookie = $this->resumeService->storeCookie($session->id);
-
-        return redirect()->route('quiz.take', $session->id)
-            ->withCookie($cookie);
+        return redirect()->route('quiz.show', $assignment->public_token)
+            ->with('success', 'Access code verified. You can now start the quiz.');
     }
 
     public function resend(Request $request, string $token)
     {
-        $assignment = QuizAssignment::where('public_token', $token)
-            ->with('quiz')
-            ->firstOrFail();
+        $assignment = QuizAssignment::findByPublicTokenOrFail($token);
 
-        $request->validate([
+        if (!$assignment->access_code_required) {
+            return redirect()->route('quiz.show', $assignment->public_token);
+        }
+
+        $data = $request->validate([
             'session_id' => ['required', 'string'],
         ]);
 
-        $session = QuizSession::where('id', $request->session_id)
-            ->where('assignment_id', $assignment->id)
-            ->firstOrFail();
-
-        if ($session->isSubmitted()) {
-            return back()->withErrors(['session_id' => 'This session has already been submitted.']);
+        if (!$assignment->isRegistrationOpen()) {
+            return redirect()->route('quiz.show', $assignment->public_token)
+                ->withErrors(['email' => 'Access code pickup is currently closed.']);
         }
 
         $key = 'quiz-register:' . $request->ip();
@@ -107,14 +86,24 @@ class AccessCodeController extends Controller
         }
         RateLimiter::hit($key, 60);
 
+        $session = QuizSession::query()
+            ->where('id', $data['session_id'])
+            ->where('assignment_id', $assignment->id)
+            ->where('status', 'pending')
+            ->firstOrFail();
+
         $plainCode = $this->accessCodes->regenerate($session);
 
-        Mail::to($session->email)->send(new \App\Mail\AccessCodeMail(
+        Mail::to($session->email)->send(new AccessCodeMail(
             $session,
             $plainCode,
             $assignment->displayTitle()
         ));
 
-        return back()->with('success', 'A new access code has been sent.');
+        $request->session()->put('quiz.pending.' . $assignment->id, $session->id);
+        $request->session()->forget('quiz.ready.' . $assignment->id);
+
+        return redirect()->route('quiz.show', $assignment->public_token)
+            ->with('success', 'A fresh access code has been sent to your email.');
     }
 }

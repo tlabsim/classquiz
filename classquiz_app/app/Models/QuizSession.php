@@ -46,7 +46,7 @@ class QuizSession extends Model
 
     public function isAccessCodeExpired(): bool
     {
-        return $this->access_code_expires_at->isPast();
+        return $this->access_code_expires_at?->isPast() ?? false;
     }
 
     public function hasStarted(): bool

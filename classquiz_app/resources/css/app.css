@@ -1,6 +1,14 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@source "../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php";
+@source "../../storage/framework/views/*.php";
+@source "../views/**/*.blade.php";
+@source "../js/**/*.js";
+@plugin "@tailwindcss/forms";
+
+@theme {
+    --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-serif: "DM Serif Display", ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+}
 
 /* ─── Alpine cloak ─────────────────────────────────────── */
 [x-cloak] { display: none !important; }
@@ -64,15 +72,27 @@
                disabled:opacity-60 disabled:cursor-not-allowed;
     }
     .cq-btn-primary {
-        @apply cq-btn bg-emerald-600 text-white shadow-sm
+        @apply inline-flex items-center justify-center gap-2 rounded-lg
+               px-4 py-2.5 text-sm font-medium transition-colors duration-150
+               focus:outline-none focus:ring-2 focus:ring-offset-2
+               disabled:cursor-not-allowed disabled:opacity-60
+               bg-emerald-600 text-white shadow-sm
                hover:bg-emerald-700 focus:ring-emerald-500;
     }
     .cq-btn-secondary {
-        @apply cq-btn border border-gray-200 bg-white text-gray-700 shadow-sm
+        @apply inline-flex items-center justify-center gap-2 rounded-lg
+               px-4 py-2.5 text-sm font-medium transition-colors duration-150
+               focus:outline-none focus:ring-2 focus:ring-offset-2
+               disabled:cursor-not-allowed disabled:opacity-60
+               border border-gray-200 bg-white text-gray-700 shadow-sm
                hover:bg-gray-50 focus:ring-emerald-500;
     }
     .cq-btn-danger {
-        @apply cq-btn bg-red-600 text-white shadow-sm
+        @apply inline-flex items-center justify-center gap-2 rounded-lg
+               px-4 py-2.5 text-sm font-medium transition-colors duration-150
+               focus:outline-none focus:ring-2 focus:ring-offset-2
+               disabled:cursor-not-allowed disabled:opacity-60
+               bg-red-600 text-white shadow-sm
                hover:bg-red-700 focus:ring-red-500;
     }
     .cq-btn-sm {
@@ -88,11 +108,11 @@
     .cq-badge {
         @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium;
     }
-    .cq-badge-gray   { @apply cq-badge bg-gray-100 text-gray-600; }
-    .cq-badge-green  { @apply cq-badge bg-emerald-50 text-emerald-700; }
-    .cq-badge-yellow { @apply cq-badge bg-amber-50 text-amber-700; }
-    .cq-badge-blue   { @apply cq-badge bg-emerald-50 text-emerald-700; }
-    .cq-badge-red    { @apply cq-badge bg-red-50 text-red-700; }
+    .cq-badge-gray   { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-gray-100 text-gray-600; }
+    .cq-badge-green  { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700; }
+    .cq-badge-yellow { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-amber-50 text-amber-700; }
+    .cq-badge-blue   { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-emerald-50 text-emerald-700; }
+    .cq-badge-red    { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-red-50 text-red-700; }
 
     /* ---- Page heading ---- */
     .cq-page-title {
@@ -218,6 +238,40 @@
     top: calc(var(--cq-tooltip-arrow-y, 50%) - 5px);
     border-left: 1px solid rgba(17, 24, 39, 0.92);
     border-bottom: 1px solid rgba(17, 24, 39, 0.92);
+}
+
+.flatpickr-calendar {
+    border: 1px solid rgba(229, 231, 235, 1);
+    border-radius: 1rem;
+    box-shadow: 0 20px 50px rgba(15, 23, 42, 0.14);
+    font-family: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.flatpickr-months .flatpickr-month,
+.flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-current-month input.cur-year {
+    font-weight: 600;
+}
+
+.flatpickr-day.selected,
+.flatpickr-day.startRange,
+.flatpickr-day.endRange,
+.flatpickr-day.selected:hover,
+.flatpickr-day.startRange:hover,
+.flatpickr-day.endRange:hover {
+    border-color: rgb(16, 185, 129);
+    background: rgb(16, 185, 129);
+}
+
+.flatpickr-day.today {
+    border-color: rgb(16, 185, 129);
+}
+
+.flatpickr-time input:hover,
+.flatpickr-time .flatpickr-am-pm:hover,
+.flatpickr-time input:focus,
+.flatpickr-time .flatpickr-am-pm:focus {
+    background: rgba(236, 253, 245, 0.85);
 }
 
 @layer components {

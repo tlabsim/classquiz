@@ -5,7 +5,7 @@
 @section('breadcrumb')
     <a href="{{ route('admin.quizzes.index') }}" class="hover:text-gray-700 transition-colors">Quizzes</a>
     <span class="mx-2 text-gray-300">/</span>
-    <a href="{{ route('admin.quizzes.edit', $quiz) }}" class="hover:text-gray-700 transition-colors truncate max-w-48">{{ $quiz->title }}</a>
+    <a href="{{ route('admin.quizzes.show', $quiz) }}" class="hover:text-gray-700 transition-colors truncate max-w-48">{{ $quiz->title }}</a>
     <span class="mx-2 text-gray-300">/</span>
     <span class="text-gray-700">Questions</span>
 @endsection
@@ -17,16 +17,28 @@
         'mcq_single' => 'MCQ-Single',
         'mcq_multi' => 'MCQ-Multi',
     ];
+
+    $totalQuestions = $questions->count();
+    $enabledQuestions = $questions->where('is_enabled', true)->count();
+    $totalPoints = $questions->sum('points');
+    $enabledPoints = $questions->where('is_enabled', true)->sum('points');
 @endphp
 
 <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
     <div>
         <h1 class="cq-page-title">Questions</h1>
-        <p class="mt-1 text-sm text-gray-500">
-            {{ trans_choice(':count question|:count questions', $questions->count(), ['count' => $questions->count()]) }}
-            &middot;
-            {{ $questions->where('is_enabled', true)->count() }} enabled
-        </p>
+        <div class="mt-2 flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                {{ trans_choice(':count question|:count questions', $totalQuestions, ['count' => $totalQuestions]) }}
+                <span class="mx-1.5 text-gray-400">|</span>
+                {{ rtrim(rtrim(number_format($totalPoints, 2), '0'), '.') }} pts.
+            </span>
+            <span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">
+                {{ $enabledQuestions }} enabled
+                <span class="mx-1.5 text-emerald-300">|</span>
+                {{ rtrim(rtrim(number_format($enabledPoints, 2), '0'), '.') }} pts.
+            </span>
+        </div>
     </div>
     <a href="{{ route('admin.quizzes.questions.create', $quiz) }}" class="cq-btn-primary">
         <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -96,8 +108,8 @@
     }"
     class="space-y-4"
 >
-    <div class="mb-4 flex flex-wrap items-center gap-3">
-        <div class="relative min-w-64 flex-1 basis-full">
+    <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+        <div class="relative min-w-0 w-full flex-1">
             <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
                  fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z"/>
@@ -107,7 +119,7 @@
         </div>
 
         <div class="flex w-full items-stretch gap-3 sm:w-auto sm:flex-nowrap">
-            <div class="relative min-w-0 flex-1 sm:min-w-48 sm:flex-none" @keydown.escape.window="typeMenuOpen = false">
+            <div class="relative min-w-0 flex-1 sm:w-52 sm:flex-none" @keydown.escape.window="typeMenuOpen = false">
                 <button type="button"
                         @click="typeMenuOpen = !typeMenuOpen"
                         class="cq-field flex h-full w-full items-center justify-between gap-3 text-left text-sm">
@@ -144,11 +156,11 @@
                 </div>
             </div>
 
-            <div class="cq-field flex min-w-0 flex-1 items-center justify-between gap-4 sm:flex-none">
+            <div class="cq-field flex min-w-0 flex-1 items-center justify-between gap-4 sm:w-44 sm:flex-none">
                 <span class="text-sm text-gray-600">Show disabled</span>
                 <button type="button"
                         @click="showDisabled = !showDisabled"
-                        class="inline-flex items-center">
+                        class="inline-flex shrink-0 items-center">
                     <span class="relative inline-flex h-5 w-9 items-center rounded-full p-0.5 transition-colors duration-200"
                           :class="showDisabled ? 'bg-emerald-500' : 'bg-gray-300'">
                         <span class="block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200"
@@ -170,6 +182,7 @@
 
                 $questionLabel = \Illuminate\Support\Str::limit(strip_tags($question->text), 100, '...');
                 $previewPayload = [
+                    'order' => $loop->iteration,
                     'type' => $question->type,
                     'text' => $question->text,
                     'points' => $question->points,
@@ -195,49 +208,54 @@
                     'bg-gray-200 border-gray-300': '{{ $question->is_enabled ? '1' : '0' }}' === '0'
                  }">
                 <div class="flex flex-col gap-4 sm:flex-row sm:items-start">
-                    <div class="flex min-w-0 flex-1 items-start gap-4">
-                    <div class="drag-handle pt-1 shrink-0 cursor-grab text-gray-300 hover:text-gray-400" title="Drag to reorder">
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/>
-                        </svg>
-                    </div>
-
-                    <div class="pt-1 text-sm font-semibold text-gray-400">
-                        {{ $loop->iteration }}.
-                    </div>
-
                     <div class="min-w-0 flex-1">
-                        <div class="mb-2 flex min-h-6 flex-wrap items-center gap-2">
-                            <span class="{{ $typeColors[$question->type] ?? 'cq-badge-gray' }}">
-                                {{ $questionTypeLabels[$question->type] ?? $question->type }}
-                            </span>
-                            <span class="text-xs text-gray-400">{{ $question->points }} pt{{ $question->points != 1 ? 's' : '' }}</span>
-                            @if($question->tag)
-                                <span class="cq-badge-gray">{{ $question->tag }}</span>
+                        <div class="grid grid-cols-[1.5rem_minmax(0,1fr)] gap-x-4 gap-y-2">
+                            <div class="drag-handle row-start-1 flex items-center justify-center self-start pt-0.5 text-gray-300 hover:text-gray-400" title="Drag to reorder">
+                                <svg class="h-4 w-4 cursor-grab" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"/>
+                                </svg>
+                            </div>
+
+                            <div class="row-start-1 flex min-h-6 flex-wrap items-center gap-2">
+                                <span class="{{ $typeColors[$question->type] ?? 'cq-badge-gray' }}">
+                                    {{ $questionTypeLabels[$question->type] ?? $question->type }}
+                                </span>
+                                <span class="text-xs text-gray-400">{{ $question->points }} pt{{ $question->points != 1 ? 's' : '' }}</span>
+                                @if($question->tag)
+                                    <span class="cq-badge-gray">{{ $question->tag }}</span>
+                                @endif
+                            </div>
+
+                            <div class="row-start-2 flex items-start justify-center pt-1">
+                                <span class="text-sm font-semibold text-gray-400">{{ $loop->iteration }}.</span>
+                            </div>
+
+                            <div class="row-start-2 min-w-0">
+                                <p class="text-base font-semibold leading-7 text-gray-700">{{ \Illuminate\Support\Str::limit(strip_tags($question->text), 260, '...') }}</p>
+                            </div>
+
+                            @if($question->choices->count())
+                                <div></div>
+                                <div class="min-w-0">
+                                    <ul class="mt-1 flex flex-wrap gap-x-4 gap-y-1.5">
+                                        @foreach($question->choices as $choice)
+                                            <li class="flex items-center gap-1 text-xs {{ $choice->is_correct ? 'font-medium text-emerald-700' : 'text-gray-400' }}">
+                                                @if($choice->is_correct)
+                                                    <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                                    </svg>
+                                                @else
+                                                    <span class="flex h-3 w-3 shrink-0 items-center justify-center">
+                                                        <span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-300"></span>
+                                                    </span>
+                                                @endif
+                                                {{ \Illuminate\Support\Str::limit(strip_tags($choice->text), 80, '...') }}
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
                             @endif
                         </div>
-
-                        <p class="text-base leading-7 text-gray-800">{{ \Illuminate\Support\Str::limit(strip_tags($question->text), 260, '...') }}</p>
-
-                        @if($question->choices->count())
-                            <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
-                                @foreach($question->choices as $choice)
-                                    <li class="flex items-center gap-1 text-xs {{ $choice->is_correct ? 'font-medium text-emerald-700' : 'text-gray-400' }}">
-                                        @if($choice->is_correct)
-                                            <svg class="h-3 w-3 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                                            </svg>
-                                        @else
-                                            <span class="flex h-3 w-3 shrink-0 items-center justify-center">
-                                                <span class="inline-block h-1.5 w-1.5 rounded-full bg-gray-300"></span>
-                                            </span>
-                                        @endif
-                                        {{ \Illuminate\Support\Str::limit(strip_tags($choice->text), 80, '...') }}
-                                    </li>
-                                @endforeach
-                            </ul>
-                        @endif
-                    </div>
                     </div>
 
                     <div class="flex w-full items-center justify-between gap-3 opacity-100 transition-opacity sm:w-auto sm:justify-end sm:opacity-0 sm:group-hover:opacity-100">
@@ -379,40 +397,50 @@
                 <h2 class="text-lg font-semibold text-gray-900">Question preview</h2>
             </div>
 
-            <div class="bg-gray-50 px-6 py-6" x-show="previewQuestion">
+            <div class="max-h-[calc(100vh-13rem)] overflow-y-auto bg-gray-50 px-6 py-6" x-show="previewQuestion">
                 <div class="cq-question-card">
-                    <div class="cq-question-header">
-                        <div class="flex items-start gap-2">
-                            <span class="cq-question-index">1.</span>
-                            <div class="cq-richtext text-base font-medium text-gray-800" x-html="previewQuestion?.text ?? ''"></div>
+                    <div class="grid grid-cols-[3rem_minmax(0,1fr)] gap-x-4 gap-y-3">
+                        <div class="flex justify-center pt-1">
+                            <span class="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-900 text-base font-semibold text-white shadow-sm"
+                                  x-text="previewQuestion?.order ?? 1"></span>
                         </div>
-                        <span class="cq-question-points" x-text="previewQuestion ? `${previewQuestion.points} pt${Number(previewQuestion.points) === 1 ? '' : 's'}` : ''"></span>
-                    </div>
 
-                    <div class="mb-3 flex flex-wrap items-center gap-2" x-show="previewQuestion?.tag">
-                        <span class="cq-badge-gray" x-text="previewQuestion?.tag"></span>
-                    </div>
-
-                    <template x-if="previewQuestion?.type === 'mcq_multi'">
-                        <div class="mb-2 text-xs text-emerald-600">Select all that apply.</div>
-                    </template>
-
-                    <div class="space-y-2">
-                        <template x-for="(choice, index) in (previewQuestion?.choices ?? [])" :key="index">
-                            <div class="cq-question-choice" :class="choice.is_correct ? 'bg-emerald-50' : ''">
-                                <span class="flex h-4 w-4 shrink-0 items-center justify-center">
-                                    <template x-if="choice.is_correct">
-                                        <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
-                                        </svg>
-                                    </template>
-                                    <template x-if="!choice.is_correct">
-                                        <span class="inline-block h-2 w-2 rounded-full bg-gray-300"></span>
-                                    </template>
-                                </span>
-                                <div class="cq-richtext text-sm text-gray-700" x-html="choice.text"></div>
+                        <div class="min-w-0">
+                            <div class="flex items-start justify-between gap-4">
+                                <div class="cq-richtext min-w-0 pt-2.5 text-base font-medium text-gray-800" x-html="previewQuestion?.text ?? ''"></div>
+                                <span class="cq-question-points" x-text="previewQuestion ? `${previewQuestion.points} pt${Number(previewQuestion.points) === 1 ? '' : 's'}` : ''"></span>
                             </div>
-                        </template>
+
+                            <div class="mt-3 mb-3 flex flex-wrap items-center gap-2" x-show="previewQuestion?.tag">
+                                <span class="cq-badge-gray" x-text="previewQuestion?.tag"></span>
+                            </div>
+                        </div>
+
+                        <div></div>
+
+                        <div class="min-w-0">
+                            <template x-if="previewQuestion?.type === 'mcq_multi'">
+                                <div class="mb-2 text-xs text-emerald-600">Select all that apply.</div>
+                            </template>
+
+                            <div class="space-y-2">
+                                <template x-for="(choice, index) in (previewQuestion?.choices ?? [])" :key="index">
+                                    <div class="cq-question-choice" :class="choice.is_correct ? 'bg-emerald-50' : ''">
+                                        <span class="flex h-4 w-4 shrink-0 items-center justify-center">
+                                            <template x-if="choice.is_correct">
+                                                <svg class="h-4 w-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                                                </svg>
+                                            </template>
+                                            <template x-if="!choice.is_correct">
+                                                <span class="inline-block h-2 w-2 rounded-full bg-gray-300"></span>
+                                            </template>
+                                        </span>
+                                        <div class="cq-richtext text-sm text-gray-700" x-html="choice.text"></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -426,10 +454,24 @@
 
 <div class="mt-6 flex flex-wrap gap-3">
     <a href="{{ route('admin.quizzes.edit', $quiz) }}" class="cq-btn-secondary cq-btn-sm">
-        Quiz settings
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <g stroke-width="1.5">
+                <path stroke-linejoin="round" d="M2.5 12c0-4.478 0-6.718 1.391-8.109S7.521 2.5 12 2.5c4.478 0 6.718 0 8.109 1.391S21.5 7.521 21.5 12c0 4.478 0 6.718-1.391 8.109S16.479 21.5 12 21.5c-4.478 0-6.718 0-8.109-1.391S2.5 16.479 2.5 12Z"/>
+                <path d="M8.5 10a1.5 1.5 0 1 1 0-3a1.5 1.5 0 0 1 0 3Zm7 7a1.5 1.5 0 1 0 0-3a1.5 1.5 0 0 0 0 3Z"/>
+                <path stroke-linecap="round" d="M10 8.5h7m-3 7H7"/>
+            </g>
+        </svg>
+        <span>Quiz settings</span>
     </a>
     <a href="{{ route('admin.quizzes.assignments.index', $quiz) }}" class="cq-btn-secondary cq-btn-sm">
-        Assignments &rarr;
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+            <g stroke-linejoin="round" stroke-width="1.5">
+                <path d="M4 3H3a1 1 0 0 0-1 1v14l1.5 3L5 18V4a1 1 0 0 0-1-1Z"/>
+                <path stroke-linecap="round" d="M21 12.001v-4c0-2.358 0-3.536-.732-4.269C19.535 3 18.357 3 16 3h-3c-2.357 0-3.536 0-4.268.732C8 4.465 8 5.643 8 8.001v8c0 2.358 0 3.537.732 4.27c.62.62 1.561.714 3.268.729m0-14h5m-5 4h5"/>
+                <path stroke-linecap="round" d="M14 19s1.5.5 2.5 2c0 0 1.5-4 5.5-6M2 7h3"/>
+            </g>
+        </svg>
+        <span>Assignments</span>
     </a>
 </div>
 

@@ -4,6 +4,9 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>{{ $session->assignment->displayTitle() }}</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -19,12 +22,23 @@
 <div class="mx-auto max-w-3xl px-4 {{ $timeRemaining !== null ? 'pt-16' : 'pt-8' }} pb-16">
     <h1 class="text-2xl font-bold text-gray-900 mb-8">{{ $session->assignment->displayTitle() }}</h1>
 
-    <form id="quiz-form" method="POST" action="{{ route('quiz.submit', $session->id) }}">
+    @php
+        $onePerPage = $session->assignment->setting('question_presentation', 'one_per_page') === 'one_per_page';
+        $allowBack = (bool) $session->assignment->setting('allow_modify_previous_answers', true);
+    @endphp
+
+    <form id="quiz-form"
+          method="POST"
+          action="{{ route('quiz.submit', $session->id) }}"
+          x-data="{ currentQuestionIndex: 0, onePerPage: @js($onePerPage), allowBack: @js($allowBack), totalQuestions: {{ $orderedQuestions->count() }} }">
         @csrf
         <div class="space-y-6">
             @foreach($orderedQuestions as $index => $question)
             @php $saved = $answeredMap->get($question->id); @endphp
-            <div class="cq-question-card" data-question-id="{{ $question->id }}">
+            <div class="cq-question-card"
+                 data-question-id="{{ $question->id }}"
+                 x-show="!onePerPage || currentQuestionIndex === {{ $index }}"
+                 x-cloak>
                 <div class="cq-question-header">
                     <div class="flex items-start gap-2">
                         <span class="cq-question-index">{{ $index + 1 }}.</span>
@@ -73,7 +87,31 @@
             @endforeach
         </div>
 
-        <div class="mt-8 flex justify-end">
+        <div class="mt-8 flex items-center justify-between gap-3" x-show="onePerPage" x-cloak>
+            <button type="button"
+                    @click="if (allowBack && currentQuestionIndex > 0) currentQuestionIndex -= 1"
+                    x-show="allowBack && currentQuestionIndex > 0"
+                    class="cq-btn cq-btn-secondary">
+                Previous
+            </button>
+            <div class="text-sm text-gray-500" x-text="`Question ${currentQuestionIndex + 1} of ${totalQuestions}`"></div>
+            <div class="flex items-center gap-3">
+                <button type="button"
+                        x-show="currentQuestionIndex < totalQuestions - 1"
+                        @click="if (currentQuestionIndex < totalQuestions - 1) currentQuestionIndex += 1"
+                        class="cq-btn cq-btn-primary">
+                    Next question
+                </button>
+                <button type="button"
+                        x-show="currentQuestionIndex === totalQuestions - 1"
+                        onclick="confirmSubmit()"
+                        class="cq-btn cq-btn-primary">
+                    Submit Quiz
+                </button>
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-end" x-show="!onePerPage">
             <button type="button" onclick="confirmSubmit()"
                     class="px-8 py-3 bg-emerald-600 text-white font-medium rounded-lg hover:bg-emerald-700">
                 Submit Quiz
@@ -83,6 +121,12 @@
 </div>
 
 <script>
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        window.location.reload();
+    }
+});
+
 const AUTOSAVE_URL = "{{ route('quiz.autosave', $session->id) }}";
 const CSRF = document.querySelector('meta[name="csrf-token"]').content;
 

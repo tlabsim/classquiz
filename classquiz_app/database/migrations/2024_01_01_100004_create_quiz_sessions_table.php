@@ -14,8 +14,8 @@ return new class extends Migration
             $table->string('email');
             $table->string('name')->nullable();
             $table->string('class_id', 100)->nullable();
-            $table->string('access_code');          // bcrypt hash
-            $table->timestamp('access_code_expires_at');
+            $table->string('access_code')->nullable();          // bcrypt hash
+            $table->timestamp('access_code_expires_at')->nullable();
             $table->string('resume_token')->nullable(); // bcrypt hash
             $table->enum('status', ['pending', 'active', 'in_progress', 'submitted', 'graded'])
                   ->default('pending');

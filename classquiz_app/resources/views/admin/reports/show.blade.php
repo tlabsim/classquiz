@@ -5,7 +5,7 @@
 @section('breadcrumb')
     <a href="{{ route('admin.quizzes.index') }}" class="hover:text-gray-700 transition-colors">Quizzes</a>
     <span class="mx-2 text-gray-300">/</span>
-    <a href="{{ route('admin.quizzes.edit', $assignment->quiz) }}" class="hover:text-gray-700 transition-colors truncate max-w-32">{{ $assignment->quiz->title }}</a>
+    <a href="{{ route('admin.quizzes.show', $assignment->quiz) }}" class="hover:text-gray-700 transition-colors truncate max-w-32">{{ $assignment->quiz->title }}</a>
     <span class="mx-2 text-gray-300">/</span>
     <a href="{{ route('admin.quizzes.assignments.report', [$assignment->quiz, $assignment]) }}" class="hover:text-gray-700 transition-colors">Report</a>
     <span class="mx-2 text-gray-300">/</span>

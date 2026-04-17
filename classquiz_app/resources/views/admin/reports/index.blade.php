@@ -5,7 +5,7 @@
 @section('breadcrumb')
     <a href="{{ route('admin.quizzes.index') }}" class="hover:text-gray-700 transition-colors">Quizzes</a>
     <span class="mx-2 text-gray-300">/</span>
-    <a href="{{ route('admin.quizzes.edit', $assignment->quiz) }}" class="hover:text-gray-700 transition-colors truncate max-w-36">{{ $assignment->quiz->title }}</a>
+    <a href="{{ route('admin.quizzes.show', $assignment->quiz) }}" class="hover:text-gray-700 transition-colors truncate max-w-36">{{ $assignment->quiz->title }}</a>
     <span class="mx-2 text-gray-300">/</span>
     <a href="{{ route('admin.quizzes.assignments.show', [$assignment->quiz, $assignment]) }}" class="hover:text-gray-700 transition-colors truncate max-w-36">{{ $assignment->displayTitle() }}</a>
     <span class="mx-2 text-gray-300">/</span>
@@ -20,6 +20,13 @@
         <h1 class="cq-page-title">Report</h1>
         <p class="mt-1 text-sm text-gray-500">{{ $assignment->displayTitle() }}</p>
     </div>
+    <a href="{{ route('admin.quizzes.assignments.report.export', [$assignment->quiz, $assignment]) }}"
+       class="cq-btn-secondary cq-btn-sm">
+        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 16V4m0 12l-4-4m4 4l4-4M4 20h16"/>
+        </svg>
+        Export CSV
+    </a>
 </div>
 
 {{-- ── Stat cards ──────────────────────────────────────────── --}}

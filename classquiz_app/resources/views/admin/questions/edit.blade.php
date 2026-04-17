@@ -6,7 +6,7 @@
 @section('breadcrumb')
     <a href="{{ route('admin.quizzes.index') }}" class="hover:text-gray-700 transition-colors">Quizzes</a>
     <span class="mx-2 text-gray-300">/</span>
-    <a href="{{ route('admin.quizzes.edit', $quiz) }}" class="hover:text-gray-700 transition-colors truncate max-w-40">{{ $quiz->title }}</a>
+    <a href="{{ route('admin.quizzes.show', $quiz) }}" class="hover:text-gray-700 transition-colors truncate max-w-40">{{ $quiz->title }}</a>
     <span class="mx-2 text-gray-300">/</span>
     <a href="{{ route('admin.quizzes.questions.index', $quiz) }}" class="hover:text-gray-700 transition-colors">Questions</a>
     <span class="mx-2 text-gray-300">/</span>

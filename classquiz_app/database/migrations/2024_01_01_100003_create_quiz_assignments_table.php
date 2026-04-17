@@ -11,14 +11,14 @@ return new class extends Migration
         Schema::create('quiz_assignments', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quiz_id')->constrained()->cascadeOnDelete();
-            $table->string('public_token', 64)->unique();
+            $table->string('public_token', 10)->unique();
             $table->boolean('is_active')->default(true);
             $table->string('title')->nullable();
             $table->text('instructions')->nullable();
-            $table->timestamp('registration_start')->nullable();
-            $table->timestamp('registration_end')->nullable();
             $table->timestamp('availability_start')->nullable();
             $table->timestamp('availability_end')->nullable();
+            $table->boolean('access_code_required')->default(true);
+            $table->unsignedSmallInteger('access_code_starts_before_minutes')->default(15);
             $table->unsignedSmallInteger('duration_minutes')->nullable();
             $table->json('settings')->nullable();
             $table->timestamps();

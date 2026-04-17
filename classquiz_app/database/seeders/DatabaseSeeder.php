@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
                 'name'     => 'Admin',
                 'password' => Hash::make('password'),
                 'role'     => 'admin',
+                'timezone' => 'Asia/Dhaka',
             ]
         );
 
@@ -27,7 +28,10 @@ class DatabaseSeeder extends Seeder
                 'name'     => 'Teacher',
                 'password' => Hash::make('password'),
                 'role'     => 'teacher',
+                'timezone' => 'Asia/Dhaka',
             ]
         );
+
+        $this->call(SampleQuizSeeder::class);
     }
 }

@@ -1,11 +1,36 @@
 <section>
+    @php
+        $timezones = collect(timezone_identifiers_list())
+            ->map(function ($timezone) {
+                $offsetMinutes = now($timezone)->utcOffset();
+                $sign = $offsetMinutes >= 0 ? '+' : '-';
+                $absoluteMinutes = abs($offsetMinutes);
+                $hours = intdiv($absoluteMinutes, 60);
+                $minutes = $absoluteMinutes % 60;
+                $offsetLabel = $minutes === 0
+                    ? "UTC{$sign}{$hours}"
+                    : sprintf('UTC%s%d:%02d', $sign, $hours, $minutes);
+
+                return [
+                    'timezone' => $timezone,
+                    'offset' => $offsetMinutes,
+                    'label' => "{$timezone} ({$offsetLabel})",
+                ];
+            })
+            ->sortBy([
+                ['offset', 'asc'],
+                ['timezone', 'asc'],
+            ])
+            ->values();
+    @endphp
+
     <header>
         <h2 class="text-lg font-medium text-gray-900">
             {{ __('Profile Information') }}
         </h2>
 
         <p class="mt-1 text-sm text-gray-600">
-            {{ __("Update your account's profile information and email address.") }}
+            {{ __("Update your account name and default timezone.") }}
         </p>
     </header>
 
@@ -25,26 +50,21 @@
 
         <div>
             <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full" :value="old('email', $user->email)" required autocomplete="username" />
+            <x-text-input id="email" name="email" type="email" class="mt-1 block w-full bg-gray-50 text-gray-500" :value="old('email', $user->email)" required readonly autocomplete="username" />
             <x-input-error class="mt-2" :messages="$errors->get('email')" />
+            <p class="mt-1.5 text-sm text-gray-500">Email changes are disabled from this page.</p>
+        </div>
 
-            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div>
-                    <p class="text-sm mt-2 text-gray-800">
-                        {{ __('Your email address is unverified.') }}
-
-                        <button form="send-verification" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500">
-                            {{ __('Click here to re-send the verification email.') }}
-                        </button>
-                    </p>
-
-                    @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600">
-                            {{ __('A new verification link has been sent to your email address.') }}
-                        </p>
-                    @endif
-                </div>
-            @endif
+        <div>
+            <x-input-label for="timezone" :value="__('Default Timezone')" />
+            <select id="timezone" name="timezone" class="cq-field mt-1 block w-full text-sm">
+                @foreach ($timezones as $timezone)
+                    <option value="{{ $timezone['timezone'] }}" @selected(old('timezone', $user->timezone()) === $timezone['timezone'])>
+                        {{ $timezone['label'] }}
+                    </option>
+                @endforeach
+            </select>
+            <x-input-error class="mt-2" :messages="$errors->get('timezone')" />
         </div>
 
         <div class="flex items-center gap-4">

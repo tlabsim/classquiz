@@ -1,6 +1,8 @@
 import './bootstrap';
+import 'flatpickr/dist/flatpickr.min.css';
 
 import Alpine from 'alpinejs';
+import flatpickr from 'flatpickr';
 
 window.Alpine = Alpine;
 
@@ -9,6 +11,58 @@ let tooltipBubbleEl = null;
 let tooltipContentEl = null;
 let tooltipArrowEl = null;
 let activeTooltipTarget = null;
+let copyToastEl = null;
+
+function ensureCopyToast() {
+    if (copyToastEl) return copyToastEl;
+
+    copyToastEl = document.createElement('div');
+    copyToastEl.className = 'pointer-events-none fixed bottom-4 right-4 z-50 rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white opacity-0 shadow-lg transition-all duration-200';
+    copyToastEl.setAttribute('aria-live', 'polite');
+    document.body.appendChild(copyToastEl);
+
+    return copyToastEl;
+}
+
+let copyToastTimeout = null;
+
+function showCopyToast(message) {
+    const toast = ensureCopyToast();
+    toast.textContent = message;
+    toast.classList.remove('opacity-0', 'translate-y-2');
+    toast.classList.add('opacity-100');
+
+    if (copyToastTimeout) {
+        window.clearTimeout(copyToastTimeout);
+    }
+
+    copyToastTimeout = window.setTimeout(() => {
+        toast.classList.remove('opacity-100');
+        toast.classList.add('opacity-0');
+    }, 1800);
+}
+
+async function copyText(text) {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+        return true;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    textarea.style.pointerEvents = 'none';
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    const success = document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    return success;
+}
 
 function ensureTooltip() {
     if (tooltipEl) return tooltipEl;
@@ -188,6 +242,93 @@ document.addEventListener('focusout', (event) => {
     hideTooltip();
 });
 
+document.addEventListener('click', async (event) => {
+    const target = event.target.closest('[data-copy-text]');
+    if (!target) return;
+
+    const text = target.dataset.copyText || '';
+    const label = target.dataset.copyLabel || 'Copied';
+
+    try {
+        const copied = await copyText(text);
+
+        if (!copied) {
+            throw new Error('Copy failed');
+        }
+
+        showCopyToast(`${label} copied`);
+    } catch (error) {
+        showCopyToast('Copy failed');
+    }
+});
+
+function initFlatpickr() {
+    document.querySelectorAll('[data-flatpickr]').forEach((element) => {
+        if (element._flatpickr) return;
+
+        flatpickr(element, {
+            enableTime: true,
+            dateFormat: 'Y-m-d H:i',
+            altInput: true,
+            altFormat: 'M j, Y h:i K',
+            allowInput: true,
+        });
+    });
+}
+
+function updateBreadcrumbs(container) {
+    const isMobile = window.innerWidth < 640;
+    const children = Array.from(container.children);
+    const crumbs = children.filter((child) => child.textContent.trim() !== '/');
+    const separators = children.filter((child) => child.textContent.trim() === '/');
+
+    children.forEach((child) => {
+        child.hidden = false;
+    });
+
+    container.querySelectorAll('[data-breadcrumb-ellipsis]').forEach((node) => node.remove());
+
+    if (!isMobile || crumbs.length <= 2) {
+        return;
+    }
+
+    const firstCrumb = crumbs[0];
+    const lastCrumb = crumbs[crumbs.length - 1];
+
+    crumbs.forEach((crumb) => {
+        if (crumb !== firstCrumb && crumb !== lastCrumb) {
+            crumb.hidden = true;
+        }
+    });
+
+    separators.forEach((separator) => {
+        separator.hidden = true;
+    });
+
+    const firstSeparator = separators[0];
+    const lastSeparator = separators[separators.length - 1];
+
+    if (firstSeparator) {
+        firstSeparator.hidden = false;
+    }
+
+    if (lastSeparator && lastSeparator !== firstSeparator) {
+        lastSeparator.hidden = false;
+    }
+
+    const ellipsis = document.createElement('span');
+    ellipsis.dataset.breadcrumbEllipsis = 'true';
+    ellipsis.className = 'text-gray-400';
+    ellipsis.textContent = '...';
+
+    const insertBeforeNode = lastSeparator ?? lastCrumb;
+    container.insertBefore(ellipsis, insertBeforeNode);
+}
+
+function initBreadcrumbs() {
+    document.querySelectorAll('[data-breadcrumbs]').forEach(updateBreadcrumbs);
+}
+
 window.addEventListener('scroll', () => {
     if (activeTooltipTarget) {
         positionTooltip(activeTooltipTarget);
@@ -200,4 +341,9 @@ window.addEventListener('resize', () => {
     }
 });
 
+document.addEventListener('DOMContentLoaded', initFlatpickr);
+document.addEventListener('DOMContentLoaded', initBreadcrumbs);
+
 Alpine.start();
+
+window.addEventListener('resize', initBreadcrumbs);

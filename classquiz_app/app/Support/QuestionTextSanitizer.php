@@ -63,7 +63,13 @@ class QuestionTextSanitizer
             $cleanHtml .= $document->saveHTML($child);
         }
 
-        return trim($cleanHtml);
+        $cleanHtml = trim($cleanHtml);
+
+        if (self::isVisuallyEmpty($wrapper)) {
+            return '';
+        }
+
+        return $cleanHtml;
     }
 
     private static function sanitizeNode(DOMNode $node): void
@@ -149,5 +155,28 @@ class QuestionTextSanitizer
         }
 
         $parent->removeChild($node);
+    }
+
+    private static function isVisuallyEmpty(DOMNode $node): bool
+    {
+        if ($node instanceof DOMElement && strtolower($node->tagName) === 'img') {
+            return false;
+        }
+
+        foreach ($node->childNodes as $child) {
+            if ($child->nodeType === XML_TEXT_NODE) {
+                $text = str_replace("\xc2\xa0", ' ', $child->nodeValue ?? '');
+
+                if (trim($text) !== '') {
+                    return false;
+                }
+            }
+
+            if ($child->nodeType === XML_ELEMENT_NODE && !self::isVisuallyEmpty($child)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
