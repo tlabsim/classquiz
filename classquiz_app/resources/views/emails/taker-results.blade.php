@@ -22,8 +22,7 @@
             @foreach($sessions as $session)
             @php
                 $title      = $session->assignment->quiz->title;
-                $effectiveMaxScore = $session->effectiveMaxScore();
-                $showScore  = $session->assignment->setting('show_score') && $session->status === 'graded';
+                $showScore  = $session->assignment->setting('show_result') && $session->status === 'graded';
                 $scoreText  = $showScore && $session->score !== null
                                 ? number_format($session->score, 1) . ' / ' . number_format($effectiveMaxScore, 1)
                                 : '—';
