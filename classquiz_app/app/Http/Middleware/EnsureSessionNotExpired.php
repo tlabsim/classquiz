@@ -3,12 +3,15 @@
 namespace App\Http\Middleware;
 
 use App\Models\QuizSession;
+use App\Services\GradingService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureSessionNotExpired
 {
+    public function __construct(private GradingService $grading) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         $session = $request->route('session');
@@ -28,6 +31,8 @@ class EnsureSessionNotExpired
                 'status'       => 'submitted',
                 'submitted_at' => now(),
             ]);
+
+            $this->grading->gradeSession($session->fresh());
 
             return redirect()->route('quiz.result', ['session' => $session->id])
                 ->with('warning', 'Time is up. Your quiz has been automatically submitted.');

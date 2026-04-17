@@ -15,19 +15,35 @@ class LiveController extends Controller
     {
         $user = $request->user();
 
-        $liveSessions = QuizSession::query()
+        $baseLiveQuery = QuizSession::query()
+            ->whereIn('status', ['active', 'in_progress'])
+            ->whereHas('assignment.quiz', function ($query) use ($user) {
+                if (!$user->isAdmin()) {
+                    $query->where('creator_id', $user->id);
+                }
+            });
+
+        $timedOutSessions = (clone $baseLiveQuery)
+            ->with(['assignment'])
+            ->get()
+            ->filter(fn (QuizSession $session) => $session->isTimedOut());
+
+        foreach ($timedOutSessions as $timedOutSession) {
+            $timedOutSession->update([
+                'status' => 'submitted',
+                'submitted_at' => $timedOutSession->submitted_at ?? now(),
+            ]);
+
+            $this->grading->gradeSession($timedOutSession->fresh());
+        }
+
+        $liveSessions = (clone $baseLiveQuery)
             ->with([
                 'assignment.quiz.questions' => fn ($query) => $query->where('is_enabled', true),
                 'assignment.quiz.questions.choices',
                 'answers.question.choices',
             ])
             ->withCount('answers')
-            ->whereIn('status', ['active', 'in_progress'])
-            ->whereHas('assignment.quiz', function ($query) use ($user) {
-                if (!$user->isAdmin()) {
-                    $query->where('creator_id', $user->id);
-                }
-            })
             ->orderByDesc('last_activity_at')
             ->orderByDesc('started_at')
             ->get()
