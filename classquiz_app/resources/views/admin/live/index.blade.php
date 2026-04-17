@@ -9,35 +9,111 @@
 @section('suppress_admin_alerts', true)
 
 @section('content')
-<div x-data x-init="setTimeout(() => window.location.reload(), 15000)"></div>
+@php
+    $sortUrl = function (string $column) use ($includeRecentlyGraded, $sort, $direction) {
+        $nextDirection = $sort === $column && $direction === 'desc' ? 'asc' : 'desc';
+
+        return route('admin.live', array_filter([
+            'include_recently_graded' => $includeRecentlyGraded ? 1 : null,
+            'sort' => $column,
+            'direction' => $nextDirection,
+        ]));
+    };
+
+    $sortIndicator = function (string $column) use ($sort, $direction) {
+        if ($sort !== $column) {
+            return <<<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.29 14.29L12 18.59l-4.29-4.3a1 1 0 0 0-1.42 1.42l5 5a1 1 0 0 0 1.42 0l5-5a1 1 0 0 0-1.42-1.42M7.71 9.71L12 5.41l4.29 4.3a1 1 0 0 0 1.42 0a1 1 0 0 0 0-1.42l-5-5a1 1 0 0 0-1.42 0l-5 5a1 1 0 0 0 1.42 1.42"/></svg>
+SVG;
+        }
+
+        if ($direction === 'desc') {
+            return <<<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 17h6m-6-5h9m5-1v8m0 0l3-3m-3 3l-3-3M4 7h12"/></svg>
+SVG;
+        }
+
+        return <<<'SVG'
+<svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 17h12M4 12h9M4 7h6m8 6V5m0 0l3 3m-3-3l-3 3"/></svg>
+SVG;
+    };
+@endphp
+
+<div x-data="{
+        search: '',
+        autoRefresh: JSON.parse(localStorage.getItem('liveAutoRefresh') ?? 'true'),
+        refreshTimer: null,
+        init() {
+            this.syncRefresh();
+            this.$watch('autoRefresh', value => {
+                localStorage.setItem('liveAutoRefresh', JSON.stringify(value));
+                this.syncRefresh();
+            });
+        },
+        syncRefresh() {
+            if (this.refreshTimer) {
+                clearTimeout(this.refreshTimer);
+                this.refreshTimer = null;
+            }
+
+            if (this.autoRefresh) {
+                this.refreshTimer = setTimeout(() => window.location.reload(), 15000);
+            }
+        }
+    }">
 
 <div class="mb-6 flex flex-wrap items-start justify-between gap-3">
     <div>
         <h1 class="cq-page-title">Live</h1>
         <p class="mt-1 text-sm text-gray-500">Monitor active quiz sessions and current progress.</p>
     </div>
-    <div class="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-gray-500 ring-1 ring-gray-200">
-        Updated from current session activity
+    <div class="flex flex-wrap items-center gap-3">
+        <form method="GET" action="{{ route('admin.live') }}" class="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs text-gray-600 ring-1 ring-gray-200">
+            <input type="hidden" name="sort" value="{{ $sort }}">
+            <input type="hidden" name="direction" value="{{ $direction }}">
+            <label class="flex items-center gap-2">
+                <input type="checkbox"
+                       name="include_recently_graded"
+                       value="1"
+                       {{ $includeRecentlyGraded ? 'checked' : '' }}
+                       onchange="this.form.submit()"
+                       class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                <span>Include recently graded</span>
+            </label>
+        </form>
+        <button type="button"
+                @click="autoRefresh = !autoRefresh"
+                class="flex items-center gap-2 rounded-full bg-white px-3 py-2 text-xs font-medium text-gray-600 ring-1 ring-gray-200 hover:bg-gray-50">
+            <span>Auto-refresh</span>
+            <span class="inline-flex rounded-full px-2 py-0.5 text-[11px]"
+                  :class="autoRefresh ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'"
+                  x-text="autoRefresh ? 'On' : 'Off'"></span>
+        </button>
     </div>
 </div>
 
 <div class="mb-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
     @foreach([
-        ['label' => 'Live now', 'value' => $stats['live'], 'tone' => 'bg-emerald-50 text-emerald-700'],
-        ['label' => 'In progress', 'value' => $stats['in_progress'], 'tone' => 'bg-blue-50 text-blue-700'],
-        ['label' => 'Ready to start', 'value' => $stats['ready'], 'tone' => 'bg-amber-50 text-amber-700'],
-        ['label' => 'Avg progress', 'value' => $stats['avg_question_progress'] . '%', 'tone' => 'bg-gray-100 text-gray-700'],
+        ['label' => 'Live now', 'value' => $stats['live'], 'tone' => 'text-emerald-700'],
+        ['label' => 'In progress', 'value' => $stats['in_progress'], 'tone' => 'text-blue-700'],
+        ['label' => 'Ready to start', 'value' => $stats['ready'], 'tone' => 'text-amber-700'],
+        ['label' => 'Avg progress', 'value' => $stats['avg_question_progress'] . '%', 'tone' => 'text-gray-700'],
     ] as $card)
         <div class="cq-card px-4 py-3">
             <div class="flex items-center justify-between gap-3">
-                <span class="inline-flex rounded-full px-2 py-0.5 text-[11px] font-medium {{ $card['tone'] }}">{{ $card['label'] }}</span>
+                <span class="inline-flex text-sm font-medium {{ $card['tone'] }}">{{ $card['label'] }}</span>
                 <p class="text-2xl font-semibold text-gray-900 tabular-nums">{{ $card['value'] }}</p>
             </div>
         </div>
     @endforeach
 </div>
+@if($includeRecentlyGraded)
+    <div class="mb-5 text-xs text-gray-500">
+        Showing live sessions plus sessions graded in the last 30 minutes.
+    </div>
+@endif
 
-<div class="cq-card overflow-hidden" x-data="{ search: '' }">
+<div class="cq-card overflow-hidden">
     <div class="border-b border-gray-100 px-5 py-3.5">
         <div class="relative max-w-md">
             <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400"
@@ -82,18 +158,40 @@
                                     <th class="w-10 px-4 py-3"></th>
                                     <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Student</th>
                                     <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Status</th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Questions</th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Live score</th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Time</th>
-                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">Last active</th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                        <a href="{{ $sortUrl('questions') }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            <span>Questions</span>
+                                            <span class="text-gray-400">{!! $sortIndicator('questions') !!}</span>
+                                        </a>
+                                    </th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                        <a href="{{ $sortUrl('score') }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            <span>Live score</span>
+                                            <span class="text-gray-400">{!! $sortIndicator('score') !!}</span>
+                                        </a>
+                                    </th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                        <a href="{{ $sortUrl('time') }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            <span>Time</span>
+                                            <span class="text-gray-400">{!! $sortIndicator('time') !!}</span>
+                                        </a>
+                                    </th>
+                                    <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                        <a href="{{ $sortUrl('last_active') }}" class="inline-flex items-center gap-1 hover:text-gray-700">
+                                            <span>Last active</span>
+                                            <span class="text-gray-400">{!! $sortIndicator('last_active') !!}</span>
+                                        </a>
+                                    </th>
                                     <th class="px-5 py-3"></th>
                                 </tr>
                             </thead>
                             @foreach($sessions as $session)
                         @php
-                            $statusClass = $session->status === 'in_progress'
-                                ? 'bg-emerald-100 text-emerald-700'
-                                : 'bg-blue-100 text-blue-700';
+                            $statusClass = match($session->status) {
+                                'graded' => 'bg-green-100 text-green-700',
+                                'in_progress' => 'bg-emerald-100 text-emerald-700',
+                                default => 'bg-blue-100 text-blue-700',
+                            };
                             $timeElapsedSeconds = $session->live_time_elapsed_seconds;
                             $timeElapsedLabel = $timeElapsedSeconds !== null
                                 ? sprintf('%02d:%02d', intdiv($timeElapsedSeconds, 60), $timeElapsedSeconds % 60)
