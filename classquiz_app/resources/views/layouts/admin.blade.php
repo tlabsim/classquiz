@@ -53,7 +53,7 @@
             <a href="{{ route('admin.dashboard') }}"
                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-100
                       {{ request()->routeIs('admin.dashboard') ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                <svg class="h-4 w-4 shrink-0 {{ request()->routeIs('admin.dashboard') ? 'text-emerald-600' : 'text-gray-400' }}"
+                <svg class="h-6 w-6 shrink-0 {{ request()->routeIs('admin.dashboard') ? 'text-emerald-600' : 'text-gray-400' }}"
                      fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
@@ -64,7 +64,7 @@
             <a href="{{ route('admin.live') }}"
                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-100
                       {{ request()->routeIs('admin.live') ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                <svg class="h-4 w-4 shrink-0 {{ request()->routeIs('admin.live') ? 'text-emerald-600' : 'text-gray-400' }}"
+                <svg class="h-6 w-6 shrink-0 {{ request()->routeIs('admin.live') ? 'text-emerald-600' : 'text-gray-400' }}"
                      fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path d="M6.343 4.938a1 1 0 0 1 0 1.415a8.003 8.003 0 0 0 0 11.317a1 1 0 1 1-1.414 1.414c-3.907-3.906-3.907-10.24 0-14.146a1 1 0 0 1 1.414 0m12.732 0c3.906 3.907 3.906 10.24 0 14.146a1 1 0 0 1-1.415-1.414a8.003 8.003 0 0 0 0-11.317a1 1 0 0 1 1.415-1.415M9.31 7.812a1 1 0 0 1 0 1.414a3.92 3.92 0 0 0 0 5.544a1 1 0 1 1-1.415 1.414a5.92 5.92 0 0 1 0-8.372a1 1 0 0 1 1.415 0m6.958 0a5.92 5.92 0 0 1 0 8.372a1 1 0 0 1-1.414-1.414a3.92 3.92 0 0 0 0-5.544a1 1 0 0 1 1.414-1.414m-4.186 2.77a1.5 1.5 0 1 1 0 3a1.5 1.5 0 0 1 0-3"/>
                 </svg>
@@ -75,11 +75,13 @@
             <a href="{{ route('admin.quizzes.index') }}"
                class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors duration-100
                       {{ request()->routeIs('admin.quizzes.*') ? 'bg-emerald-50 text-emerald-700' : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900' }}">
-                <svg class="h-4 w-4 shrink-0 {{ request()->routeIs('admin.quizzes.*') ? 'text-emerald-600' : 'text-gray-400' }}"
+                <!-- <svg class="h-6 w-6 shrink-0 {{ request()->routeIs('admin.quizzes.*') ? 'text-emerald-600' : 'text-gray-400' }}"
                      fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                </svg>
+                </svg> -->
+                <svg class="h-6 w-6 shrink-0 {{ request()->routeIs('admin.quizzes.*') ? 'text-emerald-600' : 'text-gray-400' }}"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor"><path stroke-width="1.5" d="M12 2a7.5 7.5 0 0 0-4.8 13.263C8.19 16.089 9 17.21 9 18.5h6c0-1.29.81-2.411 1.8-3.238A7.5 7.5 0 0 0 12 2Z"/><path stroke-linejoin="round" stroke-width="1.5" d="M15 18.5H9v2a1.5 1.5 0 0 0 1.5 1.5h3a1.5 1.5 0 0 0 1.5-1.5z"/><path stroke-linecap="round" stroke-width="1.5" d="M10 8c0-1.013.895-2 2-2s2 .82 2 1.833c0 .365-.116.705-.317.991C13.085 9.676 12 10.488 12 11.5"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.992 14h.009"/></g></svg>
                 Quizzes
             </a>
 
